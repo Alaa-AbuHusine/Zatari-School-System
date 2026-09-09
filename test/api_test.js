@@ -23,6 +23,7 @@ import {
   validateGradeLevels,
   validateCertificateRequest,
   PREDEFINED_GRADES,
+  VALID_STATUSES,
   formatGradeForExport,
   formatDateForExport,
 } from "../schemas/validation.js";
@@ -154,6 +155,30 @@ async function runTests() {
     academic_year: "2025/2026",
   });
   assert(reqEmptySection.sanitizedData.section === null, "Whitespace-only section sanitizes to null");
+
+  // 4.2 Expanded Arabic Statuses Validation
+  console.log("\n[4.2] Testing Expanded Arabic Statuses Validation...");
+  assert(VALID_STATUSES.length === 5, "Strictly 5 valid statuses defined");
+  assert(VALID_STATUSES.includes("تصديق ع حسابه الشخصي"), "Contains 'تصديق ع حسابه الشخصي'");
+  assert(VALID_STATUSES.includes("تم التصديق"), "Contains 'تم التصديق'");
+
+  const reqSelfCertified = validateCertificateRequest({
+    student_name: "سعيد كريم عبد الله النعيمي",
+    grade_level: ["GRADE_10"],
+    academic_year: "2025/2026",
+    status: "تصديق ع حسابه الشخصي",
+  });
+  assert(reqSelfCertified.isValid === true, "validateCertificateRequest accepts 'تصديق ع حسابه الشخصي'");
+  assert(reqSelfCertified.sanitizedData.status === "تصديق ع حسابه الشخصي", "Sanitized status matches 'تصديق ع حسابه الشخصي'");
+
+  const reqCertified = validateCertificateRequest({
+    student_name: "سعيد كريم عبد الله النعيمي",
+    grade_level: ["GRADE_10"],
+    academic_year: "2025/2026",
+    status: "تم التصديق",
+  });
+  assert(reqCertified.isValid === true, "validateCertificateRequest accepts 'تم التصديق'");
+  assert(reqCertified.sanitizedData.status === "تم التصديق", "Sanitized status matches 'تم التصديق'");
 
   // 7. Arabic Excel CSV Export Transformations
   console.log("\n[7] Testing Arabic Excel CSV Export Transformations...");

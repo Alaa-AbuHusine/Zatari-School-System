@@ -112,6 +112,53 @@ export async function initDatabase() {
 
       CREATE INDEX IF NOT EXISTS idx_cert_status 
       ON certificate_requests (status);
+
+      -- Non-destructive status migration: Ensure any strict CHECK constraints are removed to allow new custom statuses
+      DO $$
+      BEGIN
+        ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS certificate_requests_status_check;
+        ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS chk_certificate_status;
+        ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS check_status;
+      EXCEPTION
+        WHEN undefined_object THEN NULL;
+        WHEN undefined_table THEN NULL;
+      END $$;
+
+      -- Non-destructive ENUM migration: If custom ENUM types exist, append the new status values
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificate_status') THEN
+          BEGIN
+            ALTER TYPE certificate_status ADD VALUE IF NOT EXISTS 'تصديق ع حسابه الشخصي';
+            ALTER TYPE certificate_status ADD VALUE IF NOT EXISTS 'تم التصديق';
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_type') THEN
+          BEGIN
+            ALTER TYPE status_type ADD VALUE IF NOT EXISTS 'تصديق ع حسابه الشخصي';
+            ALTER TYPE status_type ADD VALUE IF NOT EXISTS 'تم التصديق';
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+          END;
+        END IF;
+      EXCEPTION
+        WHEN undefined_object THEN NULL;
+      END $$;
+
+      -- Non-destructive column expansion: Ensure status column can fit long Arabic status strings
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'certificate_requests' AND column_name = 'status'
+        ) THEN
+          ALTER TABLE certificate_requests ALTER COLUMN status TYPE VARCHAR(100);
+        END IF;
+      EXCEPTION
+        WHEN undefined_table THEN NULL;
+      END $$;
     `);
 
     // 2. Only seed initial records if table is brand new and completely empty

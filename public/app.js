@@ -59,9 +59,13 @@ const i18n = {
     optWaiting: "Waiting (انتظار)",
     optWritten: "Certificate Written (تمت كتابة الشهادة)",
     optSubmitted: "Submitted for Attestation (تم الرفع للتصديق)",
+    optSelfCertified: "Self-Financed Attestation (تصديق ع حسابه الشخصي)",
+    optCertified: "Attestation Completed (تم التصديق)",
     statusWaiting: "Waiting",
     statusWritten: "Certificate Written",
     statusSubmitted: "Submitted for Attestation",
+    statusSelfCertified: "Self-Financed Attestation",
+    statusCertified: "Attestation Completed",
 
     // Table Empty State
     emptyTitle: "No attestation records found",
@@ -187,9 +191,13 @@ const i18n = {
     optWaiting: "انتظار",
     optWritten: "تمت كتابة الشهادة",
     optSubmitted: "تم الرفع للتصديق",
+    optSelfCertified: "تصديق ع حسابه الشخصي",
+    optCertified: "تم التصديق",
     statusWaiting: "انتظار",
     statusWritten: "تمت كتابة الشهادة",
     statusSubmitted: "تم الرفع للتصديق",
+    statusSelfCertified: "تصديق ع حسابه الشخصي",
+    statusCertified: "تم التصديق",
 
     // Table Empty State
     emptyTitle: "لم يتم العثور على أي سجلات تصديق",
@@ -362,13 +370,36 @@ function t(key, params = {}) {
   return text;
 }
 
-// Debounce Utility for performance optimization
-function debounce(fn, delay) {
+// Aggressive UI Optimization: Debounce Utility (default 300ms) with flush & cancel
+function debounce(fn, delay = 300) {
   let timer = null;
-  return function (...args) {
+  let lastArgs = null;
+  let lastThis = null;
+
+  const debounced = function (...args) {
+    lastArgs = args;
+    lastThis = this;
     clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), delay);
+    timer = setTimeout(() => {
+      timer = null;
+      fn.apply(lastThis, lastArgs);
+    }, delay);
   };
+
+  debounced.flush = function () {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+      fn.apply(lastThis, lastArgs);
+    }
+  };
+
+  debounced.cancel = function () {
+    clearTimeout(timer);
+    timer = null;
+  };
+
+  return debounced;
 }
 
 // ==========================================
@@ -463,7 +494,7 @@ function bindEventListeners() {
   // Language Toggle
   DOM.btnLangToggle.addEventListener("click", toggleLanguage);
 
-  // Instant Search with 250ms Debounce
+  // Instant Search with 300ms Debounce
   DOM.searchInput.addEventListener("input", (e) => {
     state.search = e.target.value.trim();
     DOM.clearSearchBtn.style.display = state.search ? "block" : "none";
@@ -471,7 +502,7 @@ function bindEventListeners() {
     state.debounceTimer = setTimeout(() => {
       state.page = 1;
       loadCertificates();
-    }, 250);
+    }, 300);
   });
 
   // Clear search button
@@ -537,12 +568,37 @@ function bindEventListeners() {
     const randomSerial = Math.floor(10000 + Math.random() * 90000);
     const year = new Date().getFullYear();
     DOM.securityNumberInput.value = `SEC-${year}-${randomSerial}`;
+    formState.security_number = DOM.securityNumberInput.value;
     clearFieldError("security_number");
   });
 
-  // Live 4-Part Full Name Word Counter & Validator (Debounced 120ms to eliminate typing stutter)
-  const debouncedWordCounter = debounce(updateWordCounter, 120);
-  DOM.studentNameInput.addEventListener("input", debouncedWordCounter);
+  // Aggressive UI Optimization: 300ms Debounced Listeners on ALL Form Text Inputs
+  // 1. Student Name Input (300ms debounce)
+  DOM.studentNameInput.addEventListener("input", debouncedNameInput);
+  DOM.studentNameInput.addEventListener("blur", () => debouncedNameInput.flush());
+
+  // 2. Security Number Input (300ms debounce)
+  DOM.securityNumberInput.addEventListener("input", debouncedSecNumInput);
+  DOM.securityNumberInput.addEventListener("blur", () => debouncedSecNumInput.flush());
+
+  // 3. Academic Year Input (Instant Auto-Masking YYYY/YYYY + 300ms debounced validation)
+  DOM.academicYearInput.addEventListener("input", (e) => {
+    handleAcademicYearMask(e);
+    debouncedAcademicYearInput();
+  });
+  DOM.academicYearInput.addEventListener("blur", () => debouncedAcademicYearInput.flush());
+
+  // 4. Section Input (300ms debounce)
+  if (DOM.sectionInput) {
+    DOM.sectionInput.addEventListener("input", debouncedSectionInput);
+    DOM.sectionInput.addEventListener("blur", () => debouncedSectionInput.flush());
+  }
+
+  // 5. Notes Textarea (300ms debounce)
+  if (DOM.notesInput) {
+    DOM.notesInput.addEventListener("input", debouncedNotesInput);
+    DOM.notesInput.addEventListener("blur", () => debouncedNotesInput.flush());
+  }
 
   // Multi-Select Grade Levels Interactive Checkboxes (Event Delegation for peak UI performance)
   if (DOM.gradeMultiSelectContainer) {
@@ -580,10 +636,32 @@ function bindEventListeners() {
   });
 }
 
+// ==========================================
+// Form State & Aggressive Input Debouncing (300ms)
+// ==========================================
+const formState = {
+  student_name: "",
+  security_number: "",
+  academic_year: "",
+  section: "",
+  request_date: "",
+  status: "انتظار",
+  notes: "",
+};
+
+let lastRenderedWordCount = -1;
+
 function updateWordCounter() {
   const text = DOM.studentNameInput.value.trim();
+  formState.student_name = text;
   const parts = text.split(/\s+/).filter(Boolean);
   const count = parts.length;
+
+  // Avoid DOM thrashing if word count hasn't changed
+  if (count === lastRenderedWordCount) {
+    return;
+  }
+  lastRenderedWordCount = count;
 
   if (count >= 3) {
     DOM.nameCountBadge.textContent = `✓ ${t("wordCountText", { count })}`;
@@ -593,6 +671,85 @@ function updateWordCounter() {
     DOM.nameCountBadge.textContent = t("wordCountText", { count });
     DOM.nameCountBadge.className = "word-counter-badge count-warn";
   }
+}
+
+// 300ms Debounced Input Handlers for all Form Inputs
+const debouncedNameInput = debounce(() => {
+  updateWordCounter();
+}, 300);
+
+const debouncedSecNumInput = debounce(() => {
+  formState.security_number = DOM.securityNumberInput.value.trim();
+  clearFieldError("security_number");
+}, 300);
+
+/**
+ * Auto-Formatting / Input Masking for Academic Year:
+ * Automatically inserts a slash '/' after the first 4 consecutive digits (e.g. "2025" -> "2025/"),
+ * restricts input to digits and a single slash, max 9 characters (YYYY/YYYY),
+ * and handles backspaces without re-insert loops.
+ */
+function handleAcademicYearMask(e) {
+  const input = e.target;
+  let val = input.value;
+
+  // Extract up to 8 digits
+  const digits = val.replace(/\D/g, "").slice(0, 8);
+
+  let formatted = "";
+  if (digits.length > 4) {
+    formatted = `${digits.slice(0, 4)}/${digits.slice(4, 8)}`;
+  } else if (digits.length === 4) {
+    // If the user just pressed backspace and deleted the slash, don't re-insert it immediately
+    if (e.inputType === "deleteContentBackward" && !val.includes("/")) {
+      formatted = digits;
+    } else {
+      formatted = `${digits}/`;
+    }
+  } else {
+    formatted = digits;
+  }
+
+  if (input.value !== formatted) {
+    input.value = formatted;
+  }
+  formState.academic_year = formatted;
+}
+
+const debouncedAcademicYearInput = debounce(() => {
+  formState.academic_year = DOM.academicYearInput.value.trim();
+  if (/^\d{4}\/\d{4}$/.test(formState.academic_year)) {
+    clearFieldError("academic_year");
+  }
+}, 300);
+
+const debouncedSectionInput = debounce(() => {
+  if (DOM.sectionInput) {
+    formState.section = DOM.sectionInput.value.trim();
+  }
+  clearFieldError("section");
+}, 300);
+
+const debouncedNotesInput = debounce(() => {
+  if (DOM.notesInput) {
+    formState.notes = DOM.notesInput.value.trim();
+  }
+}, 300);
+
+function flushAllFormDebouncers() {
+  debouncedNameInput.flush();
+  debouncedSecNumInput.flush();
+  debouncedAcademicYearInput.flush();
+  debouncedSectionInput.flush();
+  debouncedNotesInput.flush();
+}
+
+function cancelAllFormDebouncers() {
+  debouncedNameInput.cancel();
+  debouncedSecNumInput.cancel();
+  debouncedAcademicYearInput.cancel();
+  debouncedSectionInput.cancel();
+  debouncedNotesInput.cancel();
 }
 
 function updateGradesSelectedBadge() {
@@ -668,6 +825,7 @@ async function fetchDashboardMetrics() {
  */
 async function handleFormSubmit(e) {
   e.preventDefault();
+  flushAllFormDebouncers();
   clearAllErrors();
 
   const selectedGradesArray = Array.from(state.selectedGrades);
@@ -841,6 +999,12 @@ function renderTable(records) {
       } else if (item.status === "تم الرفع للتصديق") {
         statusClass = "submitted";
         statusLabel = t("statusSubmitted");
+      } else if (item.status === "تصديق ع حسابه الشخصي") {
+        statusClass = "self-certified";
+        statusLabel = t("statusSelfCertified");
+      } else if (item.status === "تم التصديق") {
+        statusClass = "certified";
+        statusLabel = t("statusCertified");
       } else {
         statusClass = "waiting";
         statusLabel = t("statusWaiting");
@@ -996,6 +1160,12 @@ window.viewAttestationSlip = function (id) {
   } else if (item.status === "تم الرفع للتصديق") {
     statusClass = "submitted";
     statusLabel = t("statusSubmitted");
+  } else if (item.status === "تصديق ع حسابه الشخصي") {
+    statusClass = "self-certified";
+    statusLabel = t("statusSelfCertified");
+  } else if (item.status === "تم التصديق") {
+    statusClass = "certified";
+    statusLabel = t("statusCertified");
   } else {
     statusClass = "waiting";
     statusLabel = t("statusWaiting");
@@ -1094,14 +1264,22 @@ window.viewAttestationSlip = function (id) {
 // Modal Helpers & Field Validation UI
 // ==========================================
 function openRequestModal() {
+  cancelAllFormDebouncers();
+  lastRenderedWordCount = -1;
   clearAllErrors();
   state.editingId = null;
   DOM.certificateForm.reset();
   DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
-  DOM.academicYearInput.value = "2025/2026";
+  DOM.academicYearInput.value = "";
+  formState.academic_year = "";
   DOM.securityNumberInput.value = "";
-  if (DOM.sectionInput) DOM.sectionInput.value = "";
+  formState.security_number = "";
+  if (DOM.sectionInput) {
+    DOM.sectionInput.value = "";
+    formState.section = "";
+  }
   DOM.statusInput.value = "انتظار";
+  formState.status = "انتظار";
 
   // Restore create titles & button text
   const titleEl = document.getElementById("modalTitle");
@@ -1128,6 +1306,8 @@ function openRequestModal() {
  * Pre-fills and opens modal to edit an existing attestation request
  */
 async function openEditModal(id) {
+  cancelAllFormDebouncers();
+  lastRenderedWordCount = -1;
   clearAllErrors();
   state.editingId = id;
 
@@ -1152,12 +1332,21 @@ async function openEditModal(id) {
 
   // Pre-fill inputs
   DOM.studentNameInput.value = record.student_name || "";
+  formState.student_name = DOM.studentNameInput.value;
   DOM.securityNumberInput.value = record.security_number || "";
-  if (DOM.sectionInput) DOM.sectionInput.value = record.section || "";
-  DOM.academicYearInput.value = record.academic_year || "2025/2026";
+  formState.security_number = DOM.securityNumberInput.value;
+  if (DOM.sectionInput) {
+    DOM.sectionInput.value = record.section || "";
+    formState.section = DOM.sectionInput.value;
+  }
+  DOM.academicYearInput.value = record.academic_year || "";
+  formState.academic_year = DOM.academicYearInput.value;
   DOM.requestDateInput.value = record.request_date || new Date().toISOString().split("T")[0];
+  formState.request_date = DOM.requestDateInput.value;
   DOM.statusInput.value = record.status || "انتظار";
+  formState.status = DOM.statusInput.value;
   DOM.notesInput.value = record.notes || "";
+  formState.notes = DOM.notesInput.value;
 
   // Set Edit title & button text
   const titleEl = document.getElementById("modalTitle");
@@ -1199,6 +1388,7 @@ async function openEditModal(id) {
 window.openEditModal = openEditModal;
 
 function closeRequestModal() {
+  cancelAllFormDebouncers();
   DOM.requestModal.style.display = "none";
   state.editingId = null;
 }

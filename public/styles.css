@@ -687,6 +687,18 @@ html[dir="rtl"] .section-tag {
   border: 1px solid #a7f3d0;
 }
 
+.status-badge.self-certified {
+  background-color: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.status-badge.certified {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
 .status-badge.rejected {
   background-color: var(--rose-bg);
   color: var(--rose-text);
@@ -1134,7 +1146,7 @@ textarea {
   background-color: white;
   outline: none;
   font-family: inherit;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 input:focus,
