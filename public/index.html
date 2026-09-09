@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Gateway | مدرسة مخيم الزعتري الأساسية الثانية للبنين</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand">
+          <div class="brand-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="m9 15 2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <div class="brand-title-wrap">
+              <h1 data-i18n="appTitle">بوابة تصاديق الطلاب</h1>
+              <span class="badge-arabic" data-i18n="appTag">تصاديق الشهادات</span>
+            </div>
+            <p class="brand-subtitle" data-i18n="appSubtitle">مدرسة مخيم الزعتري الأساسية الثانية للبنين</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Language Toggle Button (EN / عربي) -->
+          <div class="lang-switch-wrapper">
+            <button id="btnLangToggle" class="btn-lang-toggle" type="button" aria-label="Toggle language">
+              <span class="lang-icon">🌐</span>
+              <span id="langToggleText">English</span>
+            </button>
+          </div>
+
+          <button id="btnExportCsv" class="btn btn-secondary" title="Export to Excel CSV" data-i18n-title="exportCsv">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span data-i18n="btnExportCsv">تصدير كشف إكسل</span>
+          </button>
+
+          <button id="btnOpenModal" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span data-i18n="btnNewRequest">إدخال طلب تصديق جديد</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Toast Notification Container -->
+      <div id="toastContainer" class="toast-container"></div>
+
+      <!-- Dashboard Metrics Cards (Reflecting the 3 new specific status categories) -->
+      <section class="metrics-grid flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label" data-i18n="statWaitingLabel">انتظار</span>
+            <div class="metric-icon pending">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+          </div>
+          <div class="metric-value text-amber" id="statWaiting">--</div>
+          <div class="metric-footnote" data-i18n="statWaitingFootnote">قيد الانتظار والمعالجة</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label" data-i18n="statWrittenLabel">تمت كتابة الشهادة</span>
+            <div class="metric-icon written">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="metric-value text-blue" id="statWritten">--</div>
+          <div class="metric-footnote" data-i18n="statWrittenFootnote">جاهزة ومكتوبة بالكامل</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label" data-i18n="statSubmittedLabel">تم الرفع للتصديق</span>
+            <div class="metric-icon verified">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="metric-value text-emerald" id="statSubmitted">--</div>
+          <div class="metric-footnote" data-i18n="statSubmittedFootnote">مرفوعة للاعتماد والتصديق</div>
+        </div>
+      </section>
+
+      <!-- Main Data Registry Table Section -->
+      <section class="registry-section">
+        <!-- Control / Filter Bar -->
+        <div class="table-controls">
+          <!-- Instant Search Input -->
+          <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input 
+              type="text" 
+              id="instantSearchInput" 
+              placeholder="بحث فوري بالرقم الأمني أو اسم الطالب..." 
+              data-i18n-placeholder="searchPlaceholder"
+              autocomplete="off"
+            />
+            <button id="clearSearchBtn" class="clear-search-btn" title="Clear search" data-i18n-title="clearSearch" style="display: none;">
+              &times;
+            </button>
+          </div>
+
+          <!-- Filters Group -->
+          <div class="filter-group">
+            <select id="statusFilter" class="select-filter">
+              <option value="ALL" data-i18n="filterAllStatus">جميع الحالات</option>
+              <option value="انتظار" data-i18n="optWaiting">انتظار</option>
+              <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
+              <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
+            </select>
+
+            <select id="gradeFilter" class="select-filter">
+              <option value="ALL" data-i18n="filterAllGrades">جميع المراحل الدراسية</option>
+              <option value="GRADE_9" data-i18n="grade9">الصف التاسع</option>
+              <option value="GRADE_10" data-i18n="grade10">العاشر</option>
+              <option value="GRADE_11_SCI" data-i18n="grade11Sci">الحادي عشر علمي</option>
+              <option value="GRADE_11_LIT" data-i18n="grade11Lit">الحادي عشر ادبي</option>
+              <option value="TAWJIHI" data-i18n="tawjihi">التوجيهي</option>
+            </select>
+
+            <select id="yearFilter" class="select-filter">
+              <option value="ALL" data-i18n="filterAllYears">جميع الأعوام الدراسية</option>
+              <option value="2025/2026">2025/2026</option>
+              <option value="2024/2025">2024/2025</option>
+              <option value="2023/2024">2023/2024</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Mobile horizontal scroll hint (Visible on small screens) -->
+        <div class="table-scroll-hint" data-i18n="tableScrollHint">⟷ مرر أفقياً لعرض باقي الأعمدة والتفاصيل</div>
+
+        <!-- Table Responsive Wrapper (Contained horizontal scroll strictly on mobile) -->
+        <div class="table-responsive overflow-x-auto max-w-full">
+          <table class="data-table" id="certDataTable">
+            <colgroup>
+              <col class="col-sec-num" />
+              <col class="col-student-name" />
+              <col class="col-grade" />
+              <col class="col-academic-year" />
+              <col class="col-request-date" />
+              <col class="col-status" />
+              <col class="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th data-i18n="thSecNum">الرقم الأمني</th>
+                <th data-i18n="thStudentName">الاسم الثلاثي الكامل للطالب</th>
+                <th data-i18n="thGradeLevel">المراحل الدراسية</th>
+                <th data-i18n="thAcademicYear">العام الدراسي</th>
+                <th data-i18n="thRequestDate">تاريخ الطلب</th>
+                <th data-i18n="thStatus">الحالة</th>
+                <th class="th-actions" data-i18n="thActions">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-footer">
+          <div class="pagination-info" id="paginationInfo">
+            عرض 0 إلى 0 من أصل 0 سجل
+          </div>
+          <div class="pagination-buttons">
+            <button id="btnPrevPage" class="btn-page" disabled>
+              <svg class="icon-prev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span data-i18n="btnPrev">السابق</span>
+            </button>
+            <div id="pageNumbers" class="page-numbers"></div>
+            <button id="btnNextPage" class="btn-page" disabled>
+              <span data-i18n="btnNext">التالي</span>
+              <svg class="icon-next" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal: New Attestation Request Form (School Name input removed) -->
+    <div id="requestModal" class="modal-overlay" style="display: none;">
+      <div class="modal-dialog flex flex-col max-h-[92dvh] max-h-[calc(100vh-1.5rem)] w-full overflow-hidden">
+        <div class="modal-header shrink-0">
+          <div>
+            <h2 class="modal-title" id="modalTitle" data-i18n="modalTitle">إدخال طلب تصديق شهادة دراسية جديد</h2>
+            <p class="modal-subtitle" data-i18n="modalSubtitle">مدرسة مخيم الزعتري الأساسية الثانية للبنين</p>
+          </div>
+          <button id="btnCloseModal" class="modal-close-btn" aria-label="Close modal">&times;</button>
+        </div>
+
+        <form id="certificateForm" class="flex flex-col flex-1 overflow-hidden" novalidate>
+          <div class="modal-body flex-1 overflow-y-auto">
+            <!-- 3-Part Full Name with live word counter -->
+            <div class="form-group">
+              <div class="label-row">
+                <label for="studentNameInput">
+                  <span data-i18n="lblStudentName">اسم الطالب (ثلاثي على الأقل)</span>
+                  <span class="required">*</span>
+                </label>
+                <span id="nameCountBadge" class="word-counter-badge count-warn">الكلمات: 0/3</span>
+              </div>
+              <input 
+                type="text" 
+                id="studentNameInput" 
+                placeholder="مثال: أحمد محمد عبد الله"
+                data-i18n-placeholder="placeholderStudentName"
+                required
+              />
+              <div class="field-hint" data-i18n="hintStudentName">يجب أن يتضمن الاسم 3 مقاطع على الأقل</div>
+              <div id="err_student_name" class="field-error"></div>
+            </div>
+
+            <!-- Multi-Select Grade Levels -->
+            <div class="form-group">
+              <div class="label-row">
+                <label>
+                  <span data-i18n="lblGradeLevel">المراحل الدراسية</span>
+                  <span class="required">*</span>
+                  <span class="multi-select-note" data-i18n="multiSelectNote">(اختر مرحلة واحدة أو أكثر)</span>
+                </label>
+                <span id="gradesSelectedBadge" class="grades-count-badge">0 محدد</span>
+              </div>
+              <div class="grade-multiselect-grid" id="gradeMultiSelectContainer">
+                <label class="grade-pill-item" data-grade="GRADE_9">
+                  <input type="checkbox" name="grade_level" value="GRADE_9" />
+                  <span class="pill-check-icon">✓</span>
+                  <span class="pill-text" data-i18n="grade9">الصف التاسع</span>
+                </label>
+                <label class="grade-pill-item" data-grade="GRADE_10">
+                  <input type="checkbox" name="grade_level" value="GRADE_10" />
+                  <span class="pill-check-icon">✓</span>
+                  <span class="pill-text" data-i18n="grade10">العاشر</span>
+                </label>
+                <label class="grade-pill-item" data-grade="GRADE_11_SCI">
+                  <input type="checkbox" name="grade_level" value="GRADE_11_SCI" />
+                  <span class="pill-check-icon">✓</span>
+                  <span class="pill-text" data-i18n="grade11Sci">الحادي عشر علمي</span>
+                </label>
+                <label class="grade-pill-item" data-grade="GRADE_11_LIT">
+                  <input type="checkbox" name="grade_level" value="GRADE_11_LIT" />
+                  <span class="pill-check-icon">✓</span>
+                  <span class="pill-text" data-i18n="grade11Lit">الحادي عشر ادبي</span>
+                </label>
+                <label class="grade-pill-item" data-grade="TAWJIHI">
+                  <input type="checkbox" name="grade_level" value="TAWJIHI" />
+                  <span class="pill-check-icon">✓</span>
+                  <span class="pill-text" data-i18n="tawjihi">التوجيهي</span>
+                </label>
+              </div>
+              <div id="err_grade_level" class="field-error"></div>
+            </div>
+
+            <!-- Security Number & Academic Year -->
+            <div class="form-row">
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="securityNumberInput">
+                    <span data-i18n="lblSecNum">الرقم الأمني (اختياري)</span>
+                  </label>
+                  <button type="button" id="btnGenSecNum" class="btn-link" data-i18n="btnGenerate">توليد تلقائي</button>
+                </div>
+                <input 
+                  type="text" 
+                  id="securityNumberInput" 
+                  placeholder="SEC-2025-00107 (اختياري)"
+                  data-i18n-placeholder="placeholderSecNum"
+                  class="font-mono uppercase"
+                />
+                <div class="field-hint" data-i18n="hintSecNum">رمز باركود أو رقم تسلسلي أمني فريد (اختياري)</div>
+                <div id="err_security_number" class="field-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="academicYearInput">
+                  <span data-i18n="lblAcademicYear">العام الدراسي</span>
+                  <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="academicYearInput" 
+                  value="2025/2026"
+                  placeholder="2025/2026"
+                  class="font-mono"
+                  required
+                />
+                <div class="field-hint" data-i18n="hintAcademicYear">الصيغة: YYYY/YYYY (مثال: 2025/2026)</div>
+                <div id="err_academic_year" class="field-error"></div>
+              </div>
+            </div>
+
+            <!-- Request Date & Status -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="requestDateInput">
+                  <span data-i18n="lblRequestDate">تاريخ الطلب</span>
+                  <span class="required">*</span>
+                </label>
+                <input 
+                  type="date" 
+                  id="requestDateInput" 
+                  required
+                />
+                <div id="err_request_date" class="field-error"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="statusInput">
+                  <span data-i18n="lblStatus">حالة الطلب</span>
+                </label>
+                <select id="statusInput">
+                  <option value="انتظار" selected data-i18n="optWaiting">انتظار</option>
+                  <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
+                  <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+              <label for="notesInput">
+                <span data-i18n="lblNotes">ملاحظات إدارية</span>
+              </label>
+              <textarea id="notesInput" rows="2" placeholder="ملاحظات تدقيق داخلية أو أرقام الصادر والوارد..." data-i18n-placeholder="placeholderNotes"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer shrink-0 sticky bottom-0">
+            <button type="button" id="btnCancelModal" class="btn btn-secondary" data-i18n="btnCancel">إلغاء</button>
+            <button type="submit" id="btnSubmitForm" class="btn btn-primary">
+              <span id="btnSubmitText" data-i18n="btnSaveRecord">حفظ طلب التصديق</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Attestation Slip Preview (With hardcoded School Name) -->
+    <div id="slipModal" class="modal-overlay" style="display: none;">
+      <div class="modal-dialog slip-dialog flex flex-col max-h-[92dvh] max-h-[calc(100vh-1.5rem)] w-full overflow-hidden">
+        <div class="modal-header shrink-0">
+          <div>
+            <h2 class="modal-title" data-i18n="slipTitle">كشف تصديق شهادة دراسية</h2>
+            <p class="modal-subtitle">مدرسة مخيم الزعتري الأساسية الثانية للبنين</p>
+          </div>
+          <button id="btnCloseSlip" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body flex-1 overflow-y-auto" id="slipContent">
+          <!-- Populated dynamically with hardcoded school name -->
+        </div>
+        <div class="modal-footer shrink-0 sticky bottom-0">
+          <button type="button" class="btn btn-secondary" id="btnCloseSlipBtn" data-i18n="btnClose">إغلاق</button>
+          <button type="button" class="btn btn-primary" onclick="window.print()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            <span data-i18n="btnPrintSlip">طباعة كشف التصديق</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
