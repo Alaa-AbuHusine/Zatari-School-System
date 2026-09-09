@@ -345,8 +345,22 @@
               </div>
             </div>
 
-            <!-- Request Date & Status -->
+            <!-- Section & Request Date -->
             <div class="form-row">
+              <div class="form-group">
+                <label for="sectionInput">
+                  <span data-i18n="lblSection">الشعبة (اختياري)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="sectionInput" 
+                  placeholder="مثال: أ أو ب أو ج" 
+                  data-i18n-placeholder="placeholderSection"
+                  maxlength="20"
+                />
+                <div class="field-hint" data-i18n="hintSection">الشعبة الصفية (مثال: أ، ب، ج)</div>
+              </div>
+
               <div class="form-group">
                 <label for="requestDateInput">
                   <span data-i18n="lblRequestDate">تاريخ الطلب</span>
@@ -359,17 +373,18 @@
                 />
                 <div id="err_request_date" class="field-error"></div>
               </div>
+            </div>
 
-              <div class="form-group">
-                <label for="statusInput">
-                  <span data-i18n="lblStatus">حالة الطلب</span>
-                </label>
-                <select id="statusInput">
-                  <option value="انتظار" selected data-i18n="optWaiting">انتظار</option>
-                  <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
-                  <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
-                </select>
-              </div>
+            <!-- Status -->
+            <div class="form-group">
+              <label for="statusInput">
+                <span data-i18n="lblStatus">حالة الطلب</span>
+              </label>
+              <select id="statusInput">
+                <option value="انتظار" selected data-i18n="optWaiting">انتظار</option>
+                <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
+                <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
+              </select>
             </div>
 
             <!-- Notes -->

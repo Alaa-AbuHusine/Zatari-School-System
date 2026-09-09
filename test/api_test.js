@@ -134,6 +134,26 @@ async function runTests() {
   assert(reqWithoutSecNum.isValid === true, "validateCertificateRequest passes without security_number");
   assert(reqWithoutSecNum.sanitizedData.security_number === null, "Omitted security_number sanitizes to null");
   assert(reqWithoutSecNum.sanitizedData.status === "انتظار", "Status defaults to 'انتظار'");
+  assert(reqWithoutSecNum.sanitizedData.section === null, "Omitted section sanitizes to null (optional)");
+
+  // 4.1 Section Field (الشعبة) Validation
+  console.log("\n[4.1] Testing Section Field (الشعبة) Validation...");
+  const reqWithSection = validateCertificateRequest({
+    student_name: "محمد عبد الرحيم سالم",
+    grade_level: ["GRADE_10"],
+    section: "  أ  ",
+    academic_year: "2025/2026",
+  });
+  assert(reqWithSection.isValid === true, "validateCertificateRequest accepts section");
+  assert(reqWithSection.sanitizedData.section === "أ", "Section trimmed to 'أ'");
+
+  const reqEmptySection = validateCertificateRequest({
+    student_name: "محمد عبد الرحيم سالم",
+    grade_level: ["GRADE_10"],
+    section: "   ",
+    academic_year: "2025/2026",
+  });
+  assert(reqEmptySection.sanitizedData.section === null, "Whitespace-only section sanitizes to null");
 
   // 7. Arabic Excel CSV Export Transformations
   console.log("\n[7] Testing Arabic Excel CSV Export Transformations...");
@@ -228,11 +248,12 @@ async function runTests() {
     const cleaned = await getCertificateById(recordNoSecNum.id);
     assert(cleaned === null, "Test record cleaned up successfully");
 
-    console.log("\n[8] Testing Full Record Update (updateCertificate)...");
+    console.log("\n[8] Testing Full Record Update (updateCertificate) & Section...");
     const editTestSec = `SEC-EDIT-${Date.now()}`;
     const initialRecord = await createCertificate({
       student_name: "وليد خالد منصور الحربي",
       grade_level: ["GRADE_10"],
+      section: "أ",
       security_number: editTestSec,
       request_date: "2026-09-01",
       academic_year: "2024/2025",
@@ -240,10 +261,12 @@ async function runTests() {
       notes: "Original note",
     });
     assert(initialRecord && initialRecord.id > 0, "Created test record for edit testing");
+    assert(initialRecord.section === "أ", "Initial record stores section 'أ'");
 
     const updatedRecord = await updateCertificate(initialRecord.id, {
       student_name: "وليد خالد منصور الحربي الزهراني",
       grade_level: ["GRADE_11_SCI", "TAWJIHI"],
+      section: "ب",
       security_number: editTestSec,
       request_date: "2026-09-09",
       academic_year: "2025/2026",
@@ -252,6 +275,7 @@ async function runTests() {
     });
 
     assert(updatedRecord.student_name === "وليد خالد منصور الحربي الزهراني", "Student name successfully updated");
+    assert(updatedRecord.section === "ب", "Section successfully updated to 'ب'");
     assert(Array.isArray(updatedRecord.grade_level) && updatedRecord.grade_level.length === 2, "Grade levels updated to multi-grade array");
     assert(updatedRecord.grade_level.includes("GRADE_11_SCI") && updatedRecord.grade_level.includes("TAWJIHI"), "Contains new grade levels");
     assert(updatedRecord.status === "تمت كتابة الشهادة", "Status updated to 'تمت كتابة الشهادة'");

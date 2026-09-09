@@ -625,6 +625,36 @@ html[dir="rtl"] .icon-next {
   border: 1px solid #cbd5e1;
 }
 
+/* Section Badge */
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  margin-right: 4px;
+}
+
+html[dir="rtl"] .section-tag {
+  margin-right: 0;
+  margin-left: 4px;
+}
+
+/* Fast class-based states for badges to avoid layout thrashing */
+.grades-count-badge.badge-active {
+  background-color: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+
+.grades-count-badge.badge-empty {
+  background-color: #f1f5f9 !important;
+  color: var(--text-muted) !important;
+}
+
 /* Compact Status Badges */
 .status-badge {
   display: inline-flex;

@@ -226,6 +226,9 @@ export function validateCertificateRequest(data) {
   sanitized.status = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
   sanitized.notes = data.notes ? String(data.notes).trim() : null;
 
+  // 8. Section (الشعبة) - Optional free text (e.g. "أ", "ب", "ج")
+  sanitized.section = data.section && String(data.section).trim() ? String(data.section).trim().slice(0, 50) : null;
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,

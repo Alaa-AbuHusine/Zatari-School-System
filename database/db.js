@@ -64,6 +64,7 @@ export function parseRow(row) {
     school_name: HARDCODED_SCHOOL_NAME, // Always hardcoded to dedicated school
     grade_level: Array.isArray(parsedGrades) ? parsedGrades : [parsedGrades],
     request_date: formattedDate,
+    section: row.section || null,
   };
 }
 
@@ -92,9 +93,12 @@ export async function initDatabase() {
         academic_year VARCHAR(50) NOT NULL,
         status VARCHAR(50) NOT NULL DEFAULT 'انتظار',
         notes TEXT,
+        section VARCHAR(50),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE certificate_requests ADD COLUMN IF NOT EXISTS section VARCHAR(50);
 
       CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_security_number 
       ON certificate_requests (security_number)
@@ -259,6 +263,7 @@ export async function getCertificates({
       academic_year,
       status,
       notes,
+      section,
       created_at
     FROM certificate_requests
     ${whereSql}
@@ -312,6 +317,7 @@ export async function createCertificate(data) {
       ? String(data.security_number).trim().toUpperCase()
       : null;
 
+  const sec = data.section && String(data.section).trim() ? String(data.section).trim() : null;
   const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
 
   const query = `
@@ -323,8 +329,9 @@ export async function createCertificate(data) {
       academic_year,
       status,
       notes,
+      section,
       updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
     RETURNING *
   `;
 
@@ -336,6 +343,7 @@ export async function createCertificate(data) {
     data.academic_year,
     finalStatus,
     data.notes || null,
+    sec,
   ]);
 
   return parseRow(res.rows[0]);
@@ -354,6 +362,7 @@ export async function updateCertificate(id, data) {
       ? String(data.security_number).trim().toUpperCase()
       : null;
 
+  const sec = data.section !== undefined ? (data.section ? String(data.section).trim() : null) : null;
   const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
 
   const query = `
@@ -366,8 +375,9 @@ export async function updateCertificate(id, data) {
       academic_year = $5,
       status = $6,
       notes = $7,
+      section = $8,
       updated_at = CURRENT_TIMESTAMP
-    WHERE id = $8
+    WHERE id = $9
     RETURNING *
   `;
 
@@ -379,6 +389,7 @@ export async function updateCertificate(id, data) {
     data.academic_year,
     finalStatus,
     data.notes !== undefined ? (data.notes ? String(data.notes).trim() : null) : null,
+    sec,
     id,
   ]);
 

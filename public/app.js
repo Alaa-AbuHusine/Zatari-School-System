@@ -91,6 +91,9 @@ const i18n = {
     hintStudentName: "Must contain at least 3 parts: First, Father, Family name (يجب أن يتضمن الاسم 3 مقاطع على الأقل)",
     wordCountText: "Words: {count}/3",
     lblGradeLevel: "Grade Levels",
+    lblSection: "Section (Optional)",
+    placeholderSection: "e.g. A, B, or C",
+    hintSection: "Classroom section (e.g. A, B, C)",
     lblSecNum: "Security Number (Optional)",
     placeholderSecNum: "e.g. SEC-2025-00107 (Optional)",
     btnGenerate: "Generate",
@@ -115,6 +118,7 @@ const i18n = {
     slipSecNum: "Security Attestation # (الرقم الأمني)",
     slipSchool: "School Name (المدرسة)",
     slipGrade: "Grade Levels (المراحل الدراسية)",
+    slipSection: "Class Section (الشعبة)",
     slipYear: "Academic Year (العام الدراسي)",
     slipStatus: "Attestation Status (حالة التصديق)",
     slipRemarks: "Remarks:",
@@ -215,6 +219,9 @@ const i18n = {
     hintStudentName: "يجب أن يتضمن الاسم 3 مقاطع على الأقل: الاسم الأول، اسم الأب، اسم العائلة",
     wordCountText: "الكلمات: {count}/3",
     lblGradeLevel: "المراحل الدراسية",
+    lblSection: "الشعبة (اختياري)",
+    placeholderSection: "مثال: أ أو ب أو ج",
+    hintSection: "الشعبة الصفية (مثال: أ، ب، ج)",
     lblSecNum: "الرقم الأمني (اختياري)",
     placeholderSecNum: "مثال: SEC-2025-00107 (اختياري)",
     btnGenerate: "توليد تلقائي",
@@ -239,6 +246,7 @@ const i18n = {
     slipSecNum: "الرقم الأمني المعتمد",
     slipSchool: "المدرسة (معتمد تلقائياً)",
     slipGrade: "المراحل الدراسية المعتمدة",
+    slipSection: "الشعبة الصفية",
     slipYear: "العام الدراسي",
     slipStatus: "حالة التصديق",
     slipRemarks: "ملاحظات إدارية:",
@@ -328,6 +336,7 @@ const DOM = {
   securityNumberInput: document.getElementById("securityNumberInput"),
   btnGenSecNum: document.getElementById("btnGenSecNum"),
   academicYearInput: document.getElementById("academicYearInput"),
+  sectionInput: document.getElementById("sectionInput"),
   requestDateInput: document.getElementById("requestDateInput"),
   statusInput: document.getElementById("statusInput"),
   notesInput: document.getElementById("notesInput"),
@@ -351,6 +360,15 @@ function t(key, params = {}) {
     text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
   }
   return text;
+}
+
+// Debounce Utility for performance optimization
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
 }
 
 // ==========================================
@@ -522,14 +540,19 @@ function bindEventListeners() {
     clearFieldError("security_number");
   });
 
-  // Live 4-Part Full Name Word Counter & Validator
-  DOM.studentNameInput.addEventListener("input", updateWordCounter);
+  // Live 4-Part Full Name Word Counter & Validator (Debounced 120ms to eliminate typing stutter)
+  const debouncedWordCounter = debounce(updateWordCounter, 120);
+  DOM.studentNameInput.addEventListener("input", debouncedWordCounter);
 
-  // Multi-Select Grade Levels Interactive Checkboxes
-  document.querySelectorAll(".grade-pill-item").forEach((pill) => {
-    pill.addEventListener("click", (e) => {
+  // Multi-Select Grade Levels Interactive Checkboxes (Event Delegation for peak UI performance)
+  if (DOM.gradeMultiSelectContainer) {
+    DOM.gradeMultiSelectContainer.addEventListener("click", (e) => {
+      const pill = e.target.closest(".grade-pill-item");
+      if (!pill) return;
       e.preventDefault();
+
       const grade = pill.getAttribute("data-grade");
+      if (!grade) return;
       const checkbox = pill.querySelector('input[type="checkbox"]');
 
       if (state.selectedGrades.has(grade)) {
@@ -545,7 +568,7 @@ function bindEventListeners() {
       updateGradesSelectedBadge();
       clearFieldError("grade_level");
     });
-  });
+  }
 
   // Form Submission
   DOM.certificateForm.addEventListener("submit", handleFormSubmit);
@@ -576,11 +599,11 @@ function updateGradesSelectedBadge() {
   const count = state.selectedGrades.size;
   DOM.gradesSelectedBadge.textContent = t("gradesSelectedCount", { count });
   if (count > 0) {
-    DOM.gradesSelectedBadge.style.backgroundColor = "var(--primary-light)";
-    DOM.gradesSelectedBadge.style.color = "var(--primary)";
+    DOM.gradesSelectedBadge.classList.add("badge-active");
+    DOM.gradesSelectedBadge.classList.remove("badge-empty");
   } else {
-    DOM.gradesSelectedBadge.style.backgroundColor = "#f1f5f9";
-    DOM.gradesSelectedBadge.style.color = "var(--text-muted)";
+    DOM.gradesSelectedBadge.classList.remove("badge-active");
+    DOM.gradesSelectedBadge.classList.add("badge-empty");
   }
 }
 
@@ -653,6 +676,7 @@ async function handleFormSubmit(e) {
   const payload = {
     student_name: DOM.studentNameInput.value.trim(),
     grade_level: selectedGradesArray,
+    section: DOM.sectionInput ? (DOM.sectionInput.value.trim() || null) : null,
     security_number: secNum || null,
     academic_year: DOM.academicYearInput.value.trim(),
     request_date: DOM.requestDateInput.value,
@@ -707,8 +731,7 @@ async function handleFormSubmit(e) {
     if (res.status === 200 || res.status === 201) {
       showToast(isEdit ? t("msgUpdated") : t("msgCreated"), "success");
       closeRequestModal();
-      loadCertificates();
-      fetchDashboardMetrics();
+      Promise.all([loadCertificates(), fetchDashboardMetrics()]).catch(console.error);
     } else if (res.status === 409) {
       showFieldError("security_number", result.errors?.security_number || "Security number already exists");
     } else if (result.errors) {
@@ -840,6 +863,10 @@ function renderTable(records) {
         })
         .join("");
 
+      const sectionHtml = item.section
+        ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
+        : "";
+
       // Security number pill or placeholder
       const secNumHtml = item.security_number
         ? `<div class="sec-code-pill font-mono">
@@ -858,7 +885,10 @@ function renderTable(records) {
           <td>${secNumHtml}</td>
           <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
           <td>
-            <div class="grade-tags-wrap">${gradeTagsHtml}</div>
+            <div class="grade-tags-wrap">
+              ${gradeTagsHtml}
+              ${sectionHtml}
+            </div>
           </td>
           <td class="font-mono" style="font-size: 0.78rem; text-align: center;">${escapeHtml(item.academic_year)}</td>
           <td style="font-size: 0.78rem; color: #64748b; text-align: center;">${escapeHtml(item.request_date)}</td>
@@ -1021,6 +1051,15 @@ window.viewAttestationSlip = function (id) {
           <div class="grade-tags-wrap" style="margin-top: 4px;">${gradeBadgesHtml}</div>
         </div>
 
+        ${
+          item.section
+            ? `<div class="slip-item">
+                <span class="slip-item-label">${t("slipSection")}</span>
+                <span class="slip-item-value font-mono" style="font-weight: 700; color: #1e293b;">${escapeHtml(item.section)}</span>
+              </div>`
+            : ""
+        }
+
         <div class="slip-item">
           <span class="slip-item-label">${t("slipYear")}</span>
           <span class="slip-item-value font-mono">${escapeHtml(item.academic_year)}</span>
@@ -1061,6 +1100,7 @@ function openRequestModal() {
   DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
   DOM.academicYearInput.value = "2025/2026";
   DOM.securityNumberInput.value = "";
+  if (DOM.sectionInput) DOM.sectionInput.value = "";
   DOM.statusInput.value = "انتظار";
 
   // Restore create titles & button text
@@ -1113,6 +1153,7 @@ async function openEditModal(id) {
   // Pre-fill inputs
   DOM.studentNameInput.value = record.student_name || "";
   DOM.securityNumberInput.value = record.security_number || "";
+  if (DOM.sectionInput) DOM.sectionInput.value = record.section || "";
   DOM.academicYearInput.value = record.academic_year || "2025/2026";
   DOM.requestDateInput.value = record.request_date || new Date().toISOString().split("T")[0];
   DOM.statusInput.value = record.status || "انتظار";
