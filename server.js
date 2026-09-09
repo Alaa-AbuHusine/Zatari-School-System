@@ -12,6 +12,7 @@ import {
   updateCertificateStatus,
   deleteCertificate,
   getDashboardMetrics,
+  initDatabase,
   HARDCODED_SCHOOL_NAME,
 } from "./database/db.js";
 import {
@@ -51,17 +52,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================
-// RESTful API Endpoints
+// RESTful API Endpoints (Async PostgreSQL)
 // ==========================================
 
 /**
  * GET /api/certificates
  * Paginated list with instant search and status/year/grade filters
  */
-app.get("/api/certificates", (req, res) => {
+app.get("/api/certificates", async (req, res) => {
   try {
     const { search, status, academic_year, grade, page, limit } = req.query;
-    const result = getCertificates({
+    const result = await getCertificates({
       search,
       status,
       academic_year,
@@ -84,9 +85,9 @@ app.get("/api/certificates", (req, res) => {
  * GET /api/certificates/stats
  * Dashboard aggregated metrics
  */
-app.get("/api/certificates/stats", (req, res) => {
+app.get("/api/certificates/stats", async (req, res) => {
   try {
-    const stats = getDashboardMetrics();
+    const stats = await getDashboardMetrics();
     res.json({ success: true, data: stats });
   } catch (error) {
     console.error("GET /api/certificates/stats error:", error);
@@ -98,10 +99,10 @@ app.get("/api/certificates/stats", (req, res) => {
  * GET /api/certificates/verify/:securityNumber
  * Fast verification by security number (used for QR code scanning & public lookup)
  */
-app.get("/api/certificates/verify/:securityNumber", (req, res) => {
+app.get("/api/certificates/verify/:securityNumber", async (req, res) => {
   try {
     const { securityNumber } = req.params;
-    const record = getCertificateBySecurityNumber(securityNumber);
+    const record = await getCertificateBySecurityNumber(securityNumber);
     if (!record) {
       return res.status(404).json({
         success: false,
@@ -118,19 +119,10 @@ app.get("/api/certificates/verify/:securityNumber", (req, res) => {
 /**
  * GET /api/certificates/export
  * Exports all records as CSV matching the required Arabic Excel format
- * Columns:
- *   1. الرقم (id)
- *   2. اسم الطالب من اربع مقاطع (student_name)
- *   3. اسم المدرسة (school_name - hardcoded to "مدرسة مخيم الزعتري الأساسية الثانية للبنين")
- *   4. الصف (grade_level - clean numbers joined by " + ", e.g. 10 + 11)
- *   5. الرقم الامني (security_number)
- *   6. تاريخ الطلب (request_date - clean DD/MM/YYYY e.g. 26/7/2026)
- *   7. العام الدراسي (academic_year)
- *   8. ملاحظات (notes)
  */
-app.get("/api/certificates/export", (req, res) => {
+app.get("/api/certificates/export", async (req, res) => {
   try {
-    const result = getCertificates({ limit: 10000 });
+    const result = await getCertificates({ limit: 10000 });
     const records = result.records;
 
     const headers = [
@@ -176,9 +168,9 @@ app.get("/api/certificates/export", (req, res) => {
  * GET /api/certificates/:id
  * Retrieve single record
  */
-app.get("/api/certificates/:id", (req, res) => {
+app.get("/api/certificates/:id", async (req, res) => {
   try {
-    const record = getCertificateById(req.params.id);
+    const record = await getCertificateById(req.params.id);
     if (!record) {
       return res.status(404).json({ success: false, message: "Certificate request not found" });
     }
@@ -193,7 +185,7 @@ app.get("/api/certificates/:id", (req, res) => {
  * POST /api/certificates
  * Create a new certificate attestation with full validation
  */
-app.post("/api/certificates", (req, res) => {
+app.post("/api/certificates", async (req, res) => {
   try {
     // 1. Validate payload
     const validation = validateCertificateRequest(req.body);
@@ -209,7 +201,7 @@ app.post("/api/certificates", (req, res) => {
 
     // 2. Prevent duplicate security numbers (only if security_number is provided)
     if (sanitizedData.security_number) {
-      const existing = getCertificateBySecurityNumber(sanitizedData.security_number);
+      const existing = await getCertificateBySecurityNumber(sanitizedData.security_number);
       if (existing) {
         return res.status(409).json({
           success: false,
@@ -222,7 +214,7 @@ app.post("/api/certificates", (req, res) => {
     }
 
     // 3. Insert record
-    const createdRecord = createCertificate(sanitizedData);
+    const createdRecord = await createCertificate(sanitizedData);
     res.status(201).json({
       success: true,
       message: "Certificate request registered successfully",
@@ -238,9 +230,9 @@ app.post("/api/certificates", (req, res) => {
  * PUT /api/certificates/:id
  * Updates an entire certificate attestation record with full validation
  */
-app.put("/api/certificates/:id", (req, res) => {
+app.put("/api/certificates/:id", async (req, res) => {
   try {
-    const existing = getCertificateById(req.params.id);
+    const existing = await getCertificateById(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, message: "Certificate request not found" });
     }
@@ -259,7 +251,7 @@ app.put("/api/certificates/:id", (req, res) => {
 
     // 2. Prevent duplicate security numbers (if provided, must not belong to ANOTHER record)
     if (sanitizedData.security_number) {
-      const duplicate = getCertificateBySecurityNumber(sanitizedData.security_number);
+      const duplicate = await getCertificateBySecurityNumber(sanitizedData.security_number);
       if (duplicate && String(duplicate.id) !== String(req.params.id)) {
         return res.status(409).json({
           success: false,
@@ -272,7 +264,7 @@ app.put("/api/certificates/:id", (req, res) => {
     }
 
     // 3. Update record in database
-    const updated = updateCertificate(req.params.id, sanitizedData);
+    const updated = await updateCertificate(req.params.id, sanitizedData);
     res.json({
       success: true,
       message: "Certificate request updated successfully",
@@ -288,7 +280,7 @@ app.put("/api/certificates/:id", (req, res) => {
  * PATCH /api/certificates/:id/status
  * Updates status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق)
  */
-app.patch("/api/certificates/:id/status", (req, res) => {
+app.patch("/api/certificates/:id/status", async (req, res) => {
   try {
     const { status, notes } = req.body;
     if (!VALID_STATUSES.includes(status)) {
@@ -298,12 +290,12 @@ app.patch("/api/certificates/:id/status", (req, res) => {
       });
     }
 
-    const existing = getCertificateById(req.params.id);
+    const existing = await getCertificateById(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, message: "Record not found" });
     }
 
-    const updated = updateCertificateStatus(req.params.id, status, notes);
+    const updated = await updateCertificateStatus(req.params.id, status, notes);
     res.json({ success: true, data: updated });
   } catch (error) {
     console.error("PATCH status error:", error);
@@ -315,13 +307,13 @@ app.patch("/api/certificates/:id/status", (req, res) => {
  * DELETE /api/certificates/:id
  * Remove record
  */
-app.delete("/api/certificates/:id", (req, res) => {
+app.delete("/api/certificates/:id", async (req, res) => {
   try {
-    const existing = getCertificateById(req.params.id);
+    const existing = await getCertificateById(req.params.id);
     if (!existing) {
       return res.status(404).json({ success: false, message: "Record not found" });
     }
-    deleteCertificate(req.params.id);
+    await deleteCertificate(req.params.id);
     res.json({ success: true, message: "Certificate request deleted successfully" });
   } catch (error) {
     console.error("DELETE error:", error);
@@ -329,12 +321,22 @@ app.delete("/api/certificates/:id", (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, HOST, () => {
-  console.log(`====================================================`);
-  console.log(` Student Gateway API & Dashboard running on:`);
-  console.log(` http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
-  console.log(` Port: ${PORT} | Host: ${HOST} | Node: ${process.version}`);
-  console.log(` Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`====================================================`);
-});
+// Start server after initializing database
+async function startServer() {
+  try {
+    await initDatabase();
+  } catch (error) {
+    console.warn("Database initialization notice:", error.message);
+  }
+
+  app.listen(PORT, HOST, () => {
+    console.log(`====================================================`);
+    console.log(` Student Gateway API & Dashboard running on:`);
+    console.log(` http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
+    console.log(` Port: ${PORT} | Host: ${HOST} | Node: ${process.version}`);
+    console.log(` Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`====================================================`);
+  });
+}
+
+startServer();

@@ -1,10 +1,6 @@
-import { DatabaseSync } from "node:sqlite";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import pg from "pg";
+const { Pool } = pg;
 import "dotenv/config";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Dedicated School Constant
 export const HARDCODED_SCHOOL_NAME = "مدرسة مخيم الزعتري الأساسية الثانية للبنين";
@@ -16,117 +12,26 @@ export const VALID_STATUSES = [
   "تم الرفع للتصديق",
 ];
 
-// Database file path resolved from environment variable (.env) or project root default
-const envDbPath = process.env.DATABASE_URL || process.env.DATABASE_PATH;
-const dbPath = envDbPath
-  ? (path.isAbsolute(envDbPath) ? envDbPath : path.resolve(process.cwd(), envDbPath))
-  : path.resolve(__dirname, "..", "student_gateway.db");
+// Connection string from host environment variable (Render / Supabase)
+const connectionString = process.env.DATABASE_URL;
 
-const db = new DatabaseSync(dbPath);
+// Determine SSL requirements: Supabase and Render require rejectUnauthorized: false for cloud SSL
+const isLocal =
+  !connectionString ||
+  connectionString.includes("localhost") ||
+  connectionString.includes("127.0.0.1");
 
-// Initialize schema (without school_name column, nullable security_number, custom statuses)
-db.exec(`
-  CREATE TABLE IF NOT EXISTS certificate_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_name TEXT NOT NULL,
-    grade_level TEXT NOT NULL,
-    security_number TEXT,
-    request_date TEXT NOT NULL DEFAULT (DATE('now')),
-    academic_year TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'انتظار',
-    notes TEXT,
-    created_at TEXT DEFAULT (DATETIME('now')),
-    updated_at TEXT DEFAULT (DATETIME('now'))
-  );
+export const pool = new Pool({
+  connectionString: connectionString || undefined,
+  ssl: connectionString && !isLocal ? { rejectUnauthorized: false } : false,
+});
 
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_security_number 
-  ON certificate_requests (security_number)
-  WHERE security_number IS NOT NULL AND security_number != '';
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle PostgreSQL client:", err.message);
+});
 
-  CREATE INDEX IF NOT EXISTS idx_cert_student_name 
-  ON certificate_requests (student_name);
-
-  CREATE INDEX IF NOT EXISTS idx_cert_academic_year 
-  ON certificate_requests (academic_year);
-
-  CREATE INDEX IF NOT EXISTS idx_cert_status 
-  ON certificate_requests (status);
-`);
-
-// Migration: Drop school_name column, make security_number nullable, and migrate legacy statuses
-try {
-  // Drop any obsolete indexes that reference school_name first
-  db.exec("DROP INDEX IF EXISTS idx_cert_academic_year_school;");
-  db.exec("DROP INDEX IF EXISTS idx_cert_school_name;");
-
-  const tableInfo = db.prepare("PRAGMA table_info(certificate_requests)").all();
-  const hasSchoolName = tableInfo.some((col) => col.name === "school_name");
-  const secNumCol = tableInfo.find((col) => col.name === "security_number");
-  const isSecNumNotNull = secNumCol && secNumCol.notnull === 1;
-
-  const oldStatusCount = db.prepare(
-    "SELECT COUNT(*) as count FROM certificate_requests WHERE status IN ('PENDING', 'VERIFIED', 'REJECTED')"
-  ).get()?.count || 0;
-
-  if (hasSchoolName || isSecNumNotNull || oldStatusCount > 0) {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS certificate_requests_migration (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_name TEXT NOT NULL,
-        grade_level TEXT NOT NULL,
-        security_number TEXT,
-        request_date TEXT NOT NULL DEFAULT (DATE('now')),
-        academic_year TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'انتظار',
-        notes TEXT,
-        created_at TEXT DEFAULT (DATETIME('now')),
-        updated_at TEXT DEFAULT (DATETIME('now'))
-      );
-
-      INSERT INTO certificate_requests_migration (id, student_name, grade_level, security_number, request_date, academic_year, status, notes, created_at, updated_at)
-      SELECT 
-        id,
-        student_name,
-        grade_level,
-        CASE WHEN security_number = '' THEN NULL ELSE security_number END,
-        request_date,
-        academic_year,
-        CASE 
-          WHEN status = 'VERIFIED' THEN 'تم الرفع للتصديق'
-          WHEN status = 'PENDING' THEN 'انتظار'
-          WHEN status = 'REJECTED' THEN 'انتظار'
-          WHEN status IN ('انتظار', 'تمت كتابة الشهادة', 'تم الرفع للتصديق') THEN status
-          ELSE 'انتظار'
-        END,
-        notes,
-        created_at,
-        updated_at
-      FROM certificate_requests;
-
-      DROP TABLE certificate_requests;
-      ALTER TABLE certificate_requests_migration RENAME TO certificate_requests;
-
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_security_number 
-      ON certificate_requests (security_number)
-      WHERE security_number IS NOT NULL AND security_number != '';
-
-      CREATE INDEX IF NOT EXISTS idx_cert_student_name 
-      ON certificate_requests (student_name);
-
-      CREATE INDEX IF NOT EXISTS idx_cert_academic_year 
-      ON certificate_requests (academic_year);
-
-      CREATE INDEX IF NOT EXISTS idx_cert_status 
-      ON certificate_requests (status);
-    `);
-    console.log("Database updated: Migrated schema (nullable security_number and custom Arabic statuses).");
-  }
-} catch (e) {
-  console.warn("Column migration notice:", e.message);
-}
-
-// Helper: Parse row to ensure grade_level is an array of strings
-function parseRow(row) {
+// Helper: Parse row to ensure grade_level is an array of strings and dates are formatted
+export function parseRow(row) {
   if (!row) return row;
   let parsedGrades = [];
   try {
@@ -143,85 +48,154 @@ function parseRow(row) {
     parsedGrades = [row.grade_level];
   }
 
+  // Format request_date to YYYY-MM-DD string
+  let formattedDate = row.request_date;
+  if (row.request_date instanceof Date) {
+    const year = row.request_date.getFullYear();
+    const month = String(row.request_date.getMonth() + 1).padStart(2, "0");
+    const day = String(row.request_date.getDate()).padStart(2, "0");
+    formattedDate = `${year}-${month}-${day}`;
+  } else if (typeof row.request_date === "string" && row.request_date.includes("T")) {
+    formattedDate = row.request_date.split("T")[0];
+  }
+
   return {
     ...row,
-    school_name: HARDCODED_SCHOOL_NAME, // Always hardcoded to the single school
+    school_name: HARDCODED_SCHOOL_NAME, // Always hardcoded to dedicated school
     grade_level: Array.isArray(parsedGrades) ? parsedGrades : [parsedGrades],
+    request_date: formattedDate,
   };
 }
 
-// Seed initial realistic data with new statuses
-const seedInsert = db.prepare(`
-  INSERT OR IGNORE INTO certificate_requests 
-  (student_name, grade_level, security_number, request_date, academic_year, status, notes)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
-`);
+/**
+ * Initializes database tables and indexes safely without dropping or recreating existing tables.
+ */
+export async function initDatabase() {
+  if (!process.env.DATABASE_URL) {
+    console.warn(
+      "WARNING: DATABASE_URL is not set. Please set DATABASE_URL to a valid PostgreSQL connection string."
+    );
+    return;
+  }
 
-const initialSeed = [
-  [
-    "أحمد محمد عبد الله السعيد",
-    JSON.stringify(["GRADE_11_SCI", "TAWJIHI"]),
-    "SEC-2025-00101",
-    "2026-09-08",
-    "2025/2026",
-    "تم الرفع للتصديق",
-    "تم تصديق الشهادة وختمها رسمياً",
-  ],
-  [
-    "فاطمة علي حسن الجابري",
-    JSON.stringify(["TAWJIHI"]),
-    "SEC-2025-00102",
-    "2026-09-07",
-    "2025/2026",
-    "انتظار",
-    "قيد المراجعة والتدقيق الإداري",
-  ],
-  [
-    "خالد عبد الرحمن إبراهيم الزهراني",
-    JSON.stringify(["GRADE_11_SCI"]),
-    "SEC-2025-00103",
-    "2026-09-06",
-    "2025/2026",
-    "تمت كتابة الشهادة",
-    "مطابق لسجلات وزارة التعليم",
-  ],
-  [
-    "طارق يوسف محمد الحسين",
-    JSON.stringify(["GRADE_11_LIT", "TAWJIHI"]),
-    "SEC-2025-00104",
-    "2026-09-05",
-    "2024/2025",
-    "تم الرفع للتصديق",
-    "Equivalency verified",
-  ],
-  [
-    "عمر زياد مصطفى النجار",
-    JSON.stringify(["GRADE_10"]),
-    "SEC-2025-00105",
-    "2026-09-04",
-    "2025/2026",
-    "انتظار",
-    "بانتظار اعتماد كشف الدرجات",
-  ],
-  [
-    "مريم سالم مبارك الكواري",
-    JSON.stringify(["GRADE_9", "GRADE_10"]),
-    "SEC-2025-00106",
-    "2026-09-03",
-    "2024/2025",
-    "تمت كتابة الشهادة",
-    "نقص في الأوراق الثبوتية",
-  ],
-];
+  let client;
+  try {
+    client = await pool.connect();
+    // 1. Create table only if it does not already exist (non-destructive)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS certificate_requests (
+        id SERIAL PRIMARY KEY,
+        student_name VARCHAR(255) NOT NULL,
+        grade_level TEXT NOT NULL,
+        security_number VARCHAR(100),
+        request_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        academic_year VARCHAR(50) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'انتظار',
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
 
-for (const row of initialSeed) {
-  seedInsert.run(...row);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_security_number 
+      ON certificate_requests (security_number)
+      WHERE security_number IS NOT NULL AND security_number != '';
+
+      CREATE INDEX IF NOT EXISTS idx_cert_student_name 
+      ON certificate_requests (student_name);
+
+      CREATE INDEX IF NOT EXISTS idx_cert_academic_year 
+      ON certificate_requests (academic_year);
+
+      CREATE INDEX IF NOT EXISTS idx_cert_status 
+      ON certificate_requests (status);
+    `);
+
+    // 2. Only seed initial records if table is brand new and completely empty
+    const countCheck = await client.query(
+      "SELECT COUNT(*)::int as count FROM certificate_requests"
+    );
+    if (countCheck.rows[0]?.count === 0) {
+      const initialSeed = [
+        [
+          "أحمد محمد عبد الله السعيد",
+          JSON.stringify(["GRADE_11_SCI", "TAWJIHI"]),
+          "SEC-2025-00101",
+          "2026-09-08",
+          "2025/2026",
+          "تم الرفع للتصديق",
+          "تم تصديق الشهادة وختمها رسمياً",
+        ],
+        [
+          "فاطمة علي حسن الجابري",
+          JSON.stringify(["TAWJIHI"]),
+          "SEC-2025-00102",
+          "2026-09-07",
+          "2025/2026",
+          "انتظار",
+          "قيد المراجعة والتدقيق الإداري",
+        ],
+        [
+          "خالد عبد الرحمن إبراهيم الزهراني",
+          JSON.stringify(["GRADE_11_SCI"]),
+          "SEC-2025-00103",
+          "2026-09-06",
+          "2025/2026",
+          "تمت كتابة الشهادة",
+          "مطابق لسجلات وزارة التعليم",
+        ],
+        [
+          "طارق يوسف محمد الحسين",
+          JSON.stringify(["GRADE_11_LIT", "TAWJIHI"]),
+          "SEC-2025-00104",
+          "2026-09-05",
+          "2024/2025",
+          "تم الرفع للتصديق",
+          "Equivalency verified",
+        ],
+        [
+          "عمر زياد مصطفى النجار",
+          JSON.stringify(["GRADE_10"]),
+          "SEC-2025-00105",
+          "2026-09-04",
+          "2025/2026",
+          "انتظار",
+          "بانتظار اعتماد كشف الدرجات",
+        ],
+        [
+          "مريم سالم مبارك الكواري",
+          JSON.stringify(["GRADE_9", "GRADE_10"]),
+          "SEC-2025-00106",
+          "2026-09-03",
+          "2024/2025",
+          "تمت كتابة الشهادة",
+          "نقص في الأوراق الثبوتية",
+        ],
+      ];
+
+      for (const row of initialSeed) {
+        await client.query(
+          `INSERT INTO certificate_requests 
+           (student_name, grade_level, security_number, request_date, academic_year, status, notes)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          row
+        );
+      }
+      console.log("Database initialized with default initial records.");
+    }
+
+    console.log("PostgreSQL database connection established successfully.");
+  } catch (error) {
+    console.error("PostgreSQL connection error:", error.message);
+    throw error;
+  } finally {
+    if (client) client.release();
+  }
 }
 
 /**
- * Retrieves paginated certificates with instant search across student_name and security_number
+ * Retrieves paginated certificates with search across student_name, security_number, and grade_level
  */
-export function getCertificates({
+export async function getCertificates({
   search = "",
   status = "",
   academic_year = "",
@@ -235,39 +209,46 @@ export function getCertificates({
 
   let whereClauses = [];
   let params = [];
+  let paramIdx = 1;
 
   if (search && search.trim()) {
     const q = `%${search.trim()}%`;
     whereClauses.push(`(
-      security_number LIKE ? OR 
-      student_name LIKE ? OR 
-      grade_level LIKE ?
+      security_number ILIKE $${paramIdx} OR 
+      student_name ILIKE $${paramIdx} OR 
+      grade_level ILIKE $${paramIdx}
     )`);
-    params.push(q, q, q);
+    params.push(q);
+    paramIdx++;
   }
 
   if (status && status.trim() && status !== "ALL") {
-    whereClauses.push(`status = ?`);
+    whereClauses.push(`status = $${paramIdx}`);
     params.push(status.trim());
+    paramIdx++;
   }
 
   if (academic_year && academic_year.trim() && academic_year !== "ALL") {
-    whereClauses.push(`academic_year = ?`);
+    whereClauses.push(`academic_year = $${paramIdx}`);
     params.push(academic_year.trim());
+    paramIdx++;
   }
 
   if (grade && grade.trim() && grade !== "ALL") {
-    whereClauses.push(`grade_level LIKE ?`);
+    whereClauses.push(`grade_level ILIKE $${paramIdx}`);
     params.push(`%"${grade.trim()}"%`);
+    paramIdx++;
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
   // Count total matching records
-  const countQuery = `SELECT COUNT(*) as total FROM certificate_requests ${whereSql}`;
-  const totalCount = db.prepare(countQuery).get(...params).total;
+  const countQuery = `SELECT COUNT(*)::int as total FROM certificate_requests ${whereSql}`;
+  const countRes = await pool.query(countQuery, params);
+  const totalCount = countRes.rows[0]?.total || 0;
 
-  // Retrieve matching page records (school_name omitted from DB query)
+  // Retrieve matching page records
+  const dataParams = [...params, l, offset];
   const dataQuery = `
     SELECT 
       id,
@@ -282,13 +263,13 @@ export function getCertificates({
     FROM certificate_requests
     ${whereSql}
     ORDER BY id DESC
-    LIMIT ? OFFSET ?
+    LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
 
-  const records = db.prepare(dataQuery).all(...params, l, offset);
+  const recordsRes = await pool.query(dataQuery, dataParams);
 
   return {
-    records: records.map(parseRow),
+    records: recordsRes.rows.map(parseRow),
     pagination: {
       page: p,
       limit: l,
@@ -301,37 +282,39 @@ export function getCertificates({
 /**
  * Find single certificate by ID
  */
-export function getCertificateById(id) {
-  const stmt = db.prepare("SELECT * FROM certificate_requests WHERE id = ?");
-  const row = stmt.get(id);
-  return parseRow(row);
+export async function getCertificateById(id) {
+  const res = await pool.query("SELECT * FROM certificate_requests WHERE id = $1", [id]);
+  return res.rows.length > 0 ? parseRow(res.rows[0]) : null;
 }
 
 /**
  * Find single certificate by unique security number
  */
-export function getCertificateBySecurityNumber(security_number) {
+export async function getCertificateBySecurityNumber(security_number) {
   if (!security_number || !String(security_number).trim()) return null;
-  const stmt = db.prepare("SELECT * FROM certificate_requests WHERE security_number = ?");
-  const row = stmt.get(String(security_number).trim().toUpperCase());
-  return parseRow(row);
+  const res = await pool.query(
+    "SELECT * FROM certificate_requests WHERE UPPER(security_number) = $1",
+    [String(security_number).trim().toUpperCase()]
+  );
+  return res.rows.length > 0 ? parseRow(res.rows[0]) : null;
 }
 
 /**
- * Creates a new certificate attestation record (without school_name, optional security_number)
+ * Creates a new certificate attestation record
  */
-export function createCertificate(data) {
+export async function createCertificate(data) {
   const gradeLevelJson = Array.isArray(data.grade_level)
     ? JSON.stringify(data.grade_level)
     : JSON.stringify([data.grade_level]);
 
-  const secNum = data.security_number && String(data.security_number).trim()
-    ? String(data.security_number).trim().toUpperCase()
-    : null;
+  const secNum =
+    data.security_number && String(data.security_number).trim()
+      ? String(data.security_number).trim().toUpperCase()
+      : null;
 
   const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
 
-  const stmt = db.prepare(`
+  const query = `
     INSERT INTO certificate_requests (
       student_name,
       grade_level,
@@ -341,51 +324,54 @@ export function createCertificate(data) {
       status,
       notes,
       updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'))
-  `);
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+    RETURNING *
+  `;
 
-  const result = stmt.run(
+  const res = await pool.query(query, [
     data.student_name,
     gradeLevelJson,
     secNum,
     data.request_date,
     data.academic_year,
     finalStatus,
-    data.notes || null
-  );
+    data.notes || null,
+  ]);
 
-  return getCertificateById(result.lastInsertRowid);
+  return parseRow(res.rows[0]);
 }
 
 /**
  * Updates an entire certificate attestation record
  */
-export function updateCertificate(id, data) {
+export async function updateCertificate(id, data) {
   const gradeLevelJson = Array.isArray(data.grade_level)
     ? JSON.stringify(data.grade_level)
     : JSON.stringify([data.grade_level]);
 
-  const secNum = data.security_number && String(data.security_number).trim()
-    ? String(data.security_number).trim().toUpperCase()
-    : null;
+  const secNum =
+    data.security_number && String(data.security_number).trim()
+      ? String(data.security_number).trim().toUpperCase()
+      : null;
 
   const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
 
-  const stmt = db.prepare(`
+  const query = `
     UPDATE certificate_requests 
     SET 
-      student_name = ?,
-      grade_level = ?,
-      security_number = ?,
-      request_date = ?,
-      academic_year = ?,
-      status = ?,
-      notes = ?,
-      updated_at = DATETIME('now')
-    WHERE id = ?
-  `);
+      student_name = $1,
+      grade_level = $2,
+      security_number = $3,
+      request_date = $4,
+      academic_year = $5,
+      status = $6,
+      notes = $7,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = $8
+    RETURNING *
+  `;
 
-  stmt.run(
+  const res = await pool.query(query, [
     data.student_name,
     gradeLevelJson,
     secNum,
@@ -393,49 +379,70 @@ export function updateCertificate(id, data) {
     data.academic_year,
     finalStatus,
     data.notes !== undefined ? (data.notes ? String(data.notes).trim() : null) : null,
-    id
-  );
+    id,
+  ]);
 
-  return getCertificateById(id);
+  return res.rows.length > 0 ? parseRow(res.rows[0]) : null;
 }
 
 /**
  * Updates status of an attestation
  */
-export function updateCertificateStatus(id, status, notes = null) {
+export async function updateCertificateStatus(id, status, notes = null) {
   const finalStatus = VALID_STATUSES.includes(status) ? status : "انتظار";
-  const stmt = db.prepare(`
+  const query = `
     UPDATE certificate_requests 
-    SET status = ?, notes = COALESCE(?, notes), updated_at = DATETIME('now')
-    WHERE id = ?
-  `);
-  stmt.run(finalStatus, notes, id);
-  return getCertificateById(id);
+    SET status = $1, notes = COALESCE($2, notes), updated_at = CURRENT_TIMESTAMP
+    WHERE id = $3
+    RETURNING *
+  `;
+  const res = await pool.query(query, [finalStatus, notes, id]);
+  return res.rows.length > 0 ? parseRow(res.rows[0]) : null;
 }
 
 /**
  * Deletes an attestation record
  */
-export function deleteCertificate(id) {
-  const stmt = db.prepare("DELETE FROM certificate_requests WHERE id = ?");
-  return stmt.run(id);
+export async function deleteCertificate(id) {
+  const res = await pool.query("DELETE FROM certificate_requests WHERE id = $1", [id]);
+  return res.rowCount > 0;
 }
 
 /**
- * Get dashboard aggregate statistics reflecting the three custom Arabic statuses
+ * Get dashboard aggregate statistics reflecting custom Arabic statuses
  */
-export function getDashboardMetrics() {
-  const total = db.prepare("SELECT COUNT(*) as count FROM certificate_requests").get().count;
-  const waiting = db.prepare("SELECT COUNT(*) as count FROM certificate_requests WHERE status = 'انتظار'").get().count;
-  const written = db.prepare("SELECT COUNT(*) as count FROM certificate_requests WHERE status = 'تمت كتابة الشهادة'").get().count;
-  const submitted = db.prepare("SELECT COUNT(*) as count FROM certificate_requests WHERE status = 'تم الرفع للتصديق'").get().count;
+export async function getDashboardMetrics() {
+  const query = `
+    SELECT 
+      COUNT(*)::int as total,
+      COUNT(*) FILTER (WHERE status = 'انتظار')::int as waiting,
+      COUNT(*) FILTER (WHERE status = 'تمت كتابة الشهادة')::int as written,
+      COUNT(*) FILTER (WHERE status = 'تم الرفع للتصديق')::int as submitted
+    FROM certificate_requests
+  `;
+  const res = await pool.query(query);
+  const row = res.rows[0] || {};
 
   return {
-    total,
-    waiting,
-    written,
-    submitted,
+    total: row.total || 0,
+    waiting: row.waiting || 0,
+    written: row.written || 0,
+    submitted: row.submitted || 0,
   };
 }
 
-export default db;
+export default {
+  pool,
+  initDatabase,
+  getCertificates,
+  getCertificateById,
+  getCertificateBySecurityNumber,
+  createCertificate,
+  updateCertificate,
+  updateCertificateStatus,
+  deleteCertificate,
+  getDashboardMetrics,
+  HARDCODED_SCHOOL_NAME,
+  VALID_STATUSES,
+  parseRow,
+};
