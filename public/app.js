@@ -638,16 +638,34 @@ function bindEventListeners() {
   DOM.certificateForm.addEventListener("submit", handleFormSubmit);
 
   // Dynamic Export CSV based on currently selected Status filter
-  DOM.btnExportCsv.addEventListener("click", () => {
-    const selectedStatus = (DOM.statusFilter && DOM.statusFilter.value) || state.statusFilter || "ALL";
-    let exportUrl = "/api/certificates/export";
-    if (selectedStatus && selectedStatus !== "ALL") {
-      exportUrl += `?status=${encodeURIComponent(selectedStatus)}`;
-    }
-    window.location.href = exportUrl;
-    showToast(t("exportDownloading"), "success");
-  });
+  if (DOM.btnExportCsv) {
+    DOM.btnExportCsv.addEventListener("click", triggerDynamicCsvExport);
+  }
 }
+
+/**
+ * Dynamic CSV Export handler - strictly reads current value from status filter dropdown
+ */
+function triggerDynamicCsvExport() {
+  const filterDropdown = DOM.statusFilter || document.getElementById("statusFilter");
+  const selectedStatus = filterDropdown && filterDropdown.value ? filterDropdown.value.trim() : "ALL";
+
+  let exportUrl = "/api/certificates/export";
+  if (
+    selectedStatus &&
+    selectedStatus !== "ALL" &&
+    selectedStatus !== "جميع الحالات"
+  ) {
+    exportUrl += `?status=${encodeURIComponent(selectedStatus)}`;
+  }
+
+  console.log(`[Export CSV] Selected Status: "${selectedStatus}" -> Download URL: ${exportUrl}`);
+  window.location.href = exportUrl;
+  if (typeof showToast === "function") {
+    showToast(t("exportDownloading"), "success");
+  }
+}
+window.triggerDynamicCsvExport = triggerDynamicCsvExport;
 
 // ==========================================
 // Form State & Aggressive Input Debouncing (300ms)

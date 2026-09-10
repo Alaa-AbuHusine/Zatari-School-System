@@ -50,7 +50,17 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    etag: false,
+    maxAge: 0,
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    },
+  })
+);
 
 // ==========================================
 // RESTful API Endpoints (Async PostgreSQL)
@@ -124,11 +134,13 @@ app.get("/api/certificates/verify/:securityNumber", async (req, res) => {
  */
 app.get("/api/certificates/export", async (req, res) => {
   try {
-    const { status } = req.query;
+    const rawStatus = req.query.status ? String(req.query.status).trim() : "";
     const filterStatus =
-      status && typeof status === "string" && status.trim() && status.trim() !== "ALL"
-        ? normalizeStatus(status.trim())
+      rawStatus && rawStatus !== "ALL" && rawStatus !== "جميع الحالات"
+        ? normalizeStatus(rawStatus)
         : null;
+
+    console.log(`[Export] Request received with status query: "${rawStatus}" -> Normalized filter: "${filterStatus || "ALL"}"`);
 
     const result = await getCertificates({
       status: filterStatus || undefined,
