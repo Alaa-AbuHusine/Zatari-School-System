@@ -30,7 +30,7 @@ const i18n = {
     statSubmittedFootnote: "Submitted for approval",
     metricsArchivedTitle: "Final Attestation & Completion:",
     statCertifiedLabel: "Certified",
-    statSelfCertifiedLabel: "Self-Financed Attestation",
+    statSelfCertifiedLabel: "Personal Attestation",
 
     // Search & Filters
     searchPlaceholder: "Instant search by Security # or Student Name...",
@@ -62,12 +62,12 @@ const i18n = {
     optWaiting: "Waiting (انتظار)",
     optWritten: "Certificate Written (تمت كتابة الشهادة)",
     optSubmitted: "Submitted for Attestation (تم الرفع للتصديق)",
-    optSelfCertified: "Self-Financed Attestation (تصديق ع حسابه الشخصي)",
+    optSelfCertified: "Personal Attestation (تصديق شخصي)",
     optCertified: "Attestation Completed (تم التصديق)",
     statusWaiting: "Waiting",
     statusWritten: "Certificate Written",
     statusSubmitted: "Submitted for Attestation",
-    statusSelfCertified: "Self-Financed Attestation",
+    statusSelfCertified: "Personal Attestation",
     statusCertified: "Attestation Completed",
 
     // Table Empty State
@@ -165,7 +165,7 @@ const i18n = {
     statSubmittedFootnote: "مرفوعة للاعتماد والتصديق",
     metricsArchivedTitle: "مؤشرات الإنجاز والتصديق النهائي:",
     statCertifiedLabel: "تم التصديق",
-    statSelfCertifiedLabel: "تصديق ع حسابه الشخصي",
+    statSelfCertifiedLabel: "تصديق شخصي",
 
     // Search & Filters
     searchPlaceholder: "بحث فوري بالرقم الأمني أو اسم الطالب...",
@@ -197,12 +197,12 @@ const i18n = {
     optWaiting: "انتظار",
     optWritten: "تمت كتابة الشهادة",
     optSubmitted: "تم الرفع للتصديق",
-    optSelfCertified: "تصديق ع حسابه الشخصي",
+    optSelfCertified: "تصديق شخصي",
     optCertified: "تم التصديق",
     statusWaiting: "انتظار",
     statusWritten: "تمت كتابة الشهادة",
     statusSubmitted: "تم الرفع للتصديق",
-    statusSelfCertified: "تصديق ع حسابه الشخصي",
+    statusSelfCertified: "تصديق شخصي",
     statusCertified: "تم التصديق",
 
     // Table Empty State
@@ -637,9 +637,14 @@ function bindEventListeners() {
   // Form Submission
   DOM.certificateForm.addEventListener("submit", handleFormSubmit);
 
-  // Export CSV
+  // Dynamic Export CSV based on currently selected Status filter
   DOM.btnExportCsv.addEventListener("click", () => {
-    window.location.href = "/api/certificates/export";
+    const selectedStatus = (DOM.statusFilter && DOM.statusFilter.value) || state.statusFilter || "ALL";
+    let exportUrl = "/api/certificates/export";
+    if (selectedStatus && selectedStatus !== "ALL") {
+      exportUrl += `?status=${encodeURIComponent(selectedStatus)}`;
+    }
+    window.location.href = exportUrl;
     showToast(t("exportDownloading"), "success");
   });
 }
@@ -1022,7 +1027,7 @@ function renderTable(records) {
       } else if (item.status === "تم الرفع للتصديق") {
         statusClass = "submitted";
         statusLabel = t("statusSubmitted");
-      } else if (item.status === "تصديق ع حسابه الشخصي") {
+      } else if (item.status === "تصديق شخصي" || item.status === "تصديق ع حسابه الشخصي") {
         statusClass = "self-certified";
         statusLabel = t("statusSelfCertified");
       } else if (item.status === "تم التصديق") {
@@ -1183,7 +1188,7 @@ window.viewAttestationSlip = function (id) {
   } else if (item.status === "تم الرفع للتصديق") {
     statusClass = "submitted";
     statusLabel = t("statusSubmitted");
-  } else if (item.status === "تصديق ع حسابه الشخصي") {
+  } else if (item.status === "تصديق شخصي" || item.status === "تصديق ع حسابه الشخصي") {
     statusClass = "self-certified";
     statusLabel = t("statusSelfCertified");
   } else if (item.status === "تم التصديق") {

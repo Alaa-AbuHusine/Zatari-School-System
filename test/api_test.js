@@ -160,12 +160,14 @@ async function runTests() {
   // 4.2 Expanded Arabic Statuses Validation
   console.log("\n[4.2] Testing Expanded Arabic Statuses Validation...");
   assert(VALID_STATUSES.length === 5, "Strictly 5 valid statuses defined");
-  assert(VALID_STATUSES.includes("تصديق ع حسابه الشخصي"), "Contains 'تصديق ع حسابه الشخصي'");
+  assert(VALID_STATUSES.includes("تصديق شخصي"), "Contains 'تصديق شخصي'");
   assert(VALID_STATUSES.includes("تم التصديق"), "Contains 'تم التصديق'");
 
   // normalizeStatus tests
-  assert(normalizeStatus("تصديق ع حسابه الشخصي") === "تصديق ع حسابه الشخصي", "normalizeStatus passes exact 'تصديق ع حسابه الشخصي'");
-  assert(normalizeStatus("  تصديق ع حسابه الشخصي  ") === "تصديق ع حسابه الشخصي", "normalizeStatus trims 'تصديق ع حسابه الشخصي'");
+  assert(normalizeStatus("تصديق شخصي") === "تصديق شخصي", "normalizeStatus passes exact 'تصديق شخصي'");
+  assert(normalizeStatus("  تصديق شخصي  ") === "تصديق شخصي", "normalizeStatus trims 'تصديق شخصي'");
+  assert(normalizeStatus("تصديق ع حسابه الشخصي") === "تصديق شخصي", "normalizeStatus normalizes legacy 'تصديق ع حسابه الشخصي' to 'تصديق شخصي'");
+  assert(normalizeStatus("  تصديق ع حسابه الشخصي  ") === "تصديق شخصي", "normalizeStatus trims and normalizes legacy 'تصديق ع حسابه الشخصي'");
   assert(normalizeStatus("تم التصديق") === "تم التصديق", "normalizeStatus passes exact 'تم التصديق'");
   assert(normalizeStatus("  تم التصديق  ") === "تم التصديق", "normalizeStatus trims 'تم التصديق'");
   assert(normalizeStatus("انتظار") === "انتظار", "normalizeStatus passes 'انتظار'");
@@ -175,10 +177,19 @@ async function runTests() {
     student_name: "سعيد كريم عبد الله النعيمي",
     grade_level: ["GRADE_10"],
     academic_year: "2025/2026",
+    status: "تصديق شخصي",
+  });
+  assert(reqSelfCertified.isValid === true, "validateCertificateRequest accepts 'تصديق شخصي'");
+  assert(reqSelfCertified.sanitizedData.status === "تصديق شخصي", "Sanitized status matches 'تصديق شخصي'");
+
+  const reqLegacySelfCertified = validateCertificateRequest({
+    student_name: "سعيد كريم عبد الله النعيمي",
+    grade_level: ["GRADE_10"],
+    academic_year: "2025/2026",
     status: "تصديق ع حسابه الشخصي",
   });
-  assert(reqSelfCertified.isValid === true, "validateCertificateRequest accepts 'تصديق ع حسابه الشخصي'");
-  assert(reqSelfCertified.sanitizedData.status === "تصديق ع حسابه الشخصي", "Sanitized status matches 'تصديق ع حسابه الشخصي'");
+  assert(reqLegacySelfCertified.isValid === true, "validateCertificateRequest accepts legacy 'تصديق ع حسابه الشخصي'");
+  assert(reqLegacySelfCertified.sanitizedData.status === "تصديق شخصي", "Legacy status sanitizes to 'تصديق شخصي'");
 
   const reqCertified = validateCertificateRequest({
     student_name: "سعيد كريم عبد الله النعيمي",
@@ -231,6 +242,45 @@ async function runTests() {
   assert(formatDateForExport("2026-09-08") === "8/9/2026", "2026-09-08 formats to '8/9/2026'");
   assert(formatDateForExport("2025-12-01") === "1/12/2025", "2025-12-01 formats to '1/12/2025'");
 
+  // 7.3 Dynamic Export Filename Generation
+  console.log("\n[7.3] Testing Dynamic Export Filename Generation...");
+  const dateStr = new Date().toISOString().split("T")[0];
+
+  function generateExportFilename(status) {
+    const filterStatus =
+      status && typeof status === "string" && status.trim() && status.trim() !== "ALL"
+        ? normalizeStatus(status.trim())
+        : null;
+    return filterStatus
+      ? `Export_${filterStatus.replace(/\s+/g, "_")}_${dateStr}.csv`
+      : `Export_All_${dateStr}.csv`;
+  }
+
+  assert(
+    generateExportFilename("تم الرفع للتصديق") === `Export_تم_الرفع_للتصديق_${dateStr}.csv`,
+    "Filename dynamically reflects 'تم الرفع للتصديق'"
+  );
+  assert(
+    generateExportFilename("انتظار") === `Export_انتظار_${dateStr}.csv`,
+    "Filename dynamically reflects 'انتظار'"
+  );
+  assert(
+    generateExportFilename("تمت كتابة الشهادة") === `Export_تمت_كتابة_الشهادة_${dateStr}.csv`,
+    "Filename dynamically reflects 'تمت كتابة الشهادة'"
+  );
+  assert(
+    generateExportFilename("تصديق شخصي") === `Export_تصديق_شخصي_${dateStr}.csv`,
+    "Filename dynamically reflects 'تصديق شخصي'"
+  );
+  assert(
+    generateExportFilename("ALL") === `Export_All_${dateStr}.csv`,
+    "Filename for 'ALL' defaults to Export_All"
+  );
+  assert(
+    generateExportFilename("") === `Export_All_${dateStr}.csv`,
+    "Filename for empty status defaults to Export_All"
+  );
+
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
   let dbReachable = false;
@@ -269,8 +319,8 @@ async function runTests() {
     const submittedRecord = await updateCertificateStatus(recordNoSecNum.id, "تم الرفع للتصديق");
     assert(submittedRecord.status === "تم الرفع للتصديق", "Status successfully updated to 'تم الرفع للتصديق'");
 
-    const selfCertifiedRecord = await updateCertificateStatus(recordNoSecNum.id, "تصديق ع حسابه الشخصي");
-    assert(selfCertifiedRecord.status === "تصديق ع حسابه الشخصي", "Status successfully updated to 'تصديق ع حسابه الشخصي'");
+    const selfCertifiedRecord = await updateCertificateStatus(recordNoSecNum.id, "تصديق شخصي");
+    assert(selfCertifiedRecord.status === "تصديق شخصي", "Status successfully updated to 'تصديق شخصي'");
 
     const certifiedRecord = await updateCertificateStatus(recordNoSecNum.id, "تم التصديق");
     assert(certifiedRecord.status === "تم التصديق", "Status successfully updated to 'تم التصديق'");

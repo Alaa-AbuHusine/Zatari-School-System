@@ -102,7 +102,7 @@ export const VALID_STATUSES = [
   "انتظار",
   "تمت كتابة الشهادة",
   "تم الرفع للتصديق",
-  "تصديق ع حسابه الشخصي",
+  "تصديق شخصي",
   "تم التصديق",
 ];
 
@@ -116,8 +116,13 @@ export function normalizeStatus(val) {
   if (VALID_STATUSES.includes(trimmed)) return trimmed;
 
   // Handle common typing / encoding variations
-  if (trimmed.includes("حسابه") || trimmed.includes("Self-Financed") || trimmed.includes("الشخصي")) {
-    return "تصديق ع حسابه الشخصي";
+  if (
+    trimmed.includes("حسابه") ||
+    trimmed.includes("شخصي") ||
+    trimmed.includes("Self-Financed") ||
+    trimmed.includes("Self Attestation")
+  ) {
+    return "تصديق شخصي";
   }
   if (
     trimmed === "تم التصديق" ||

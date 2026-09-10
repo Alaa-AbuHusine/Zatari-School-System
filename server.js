@@ -119,11 +119,21 @@ app.get("/api/certificates/verify/:securityNumber", async (req, res) => {
 
 /**
  * GET /api/certificates/export
- * Exports all records as CSV matching the required Arabic Excel format
+ * Exports records as CSV matching the required Arabic Excel format,
+ * optionally filtered by status query parameter.
  */
 app.get("/api/certificates/export", async (req, res) => {
   try {
-    const result = await getCertificates({ limit: 10000 });
+    const { status } = req.query;
+    const filterStatus =
+      status && typeof status === "string" && status.trim() && status.trim() !== "ALL"
+        ? normalizeStatus(status.trim())
+        : null;
+
+    const result = await getCertificates({
+      status: filterStatus || undefined,
+      limit: 50000,
+    });
     const records = result.records;
 
     const headers = [
@@ -158,8 +168,17 @@ app.get("/api/certificates/export", async (req, res) => {
     // UTF-8 BOM (\uFEFF) ensures Excel opens Arabic CSV without encoding issues
     const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
 
+    const dateStr = new Date().toISOString().split("T")[0];
+    const filename = filterStatus
+      ? `Export_${filterStatus.replace(/\s+/g, "_")}_${dateStr}.csv`
+      : `Export_All_${dateStr}.csv`;
+    const encodedFilename = encodeURIComponent(filename);
+
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="certificate_attestations_${new Date().toISOString().split("T")[0]}.csv"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
+    );
     res.send(csvContent);
   } catch (error) {
     console.error("Export error:", error);
@@ -284,7 +303,7 @@ app.put("/api/certificates/:id", async (req, res) => {
 
 /**
  * PATCH /api/certificates/:id/status
- * Updates status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق, تصديق ع حسابه الشخصي, تم التصديق)
+ * Updates status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق, تصديق شخصي, تم التصديق)
  */
 app.patch("/api/certificates/:id/status", async (req, res) => {
   try {

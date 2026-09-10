@@ -139,6 +139,7 @@ export async function initDatabase() {
       BEGIN
         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'certificate_status') THEN
           BEGIN
+            ALTER TYPE certificate_status ADD VALUE IF NOT EXISTS 'تصديق شخصي';
             ALTER TYPE certificate_status ADD VALUE IF NOT EXISTS 'تصديق ع حسابه الشخصي';
             ALTER TYPE certificate_status ADD VALUE IF NOT EXISTS 'تم التصديق';
           EXCEPTION
@@ -147,6 +148,7 @@ export async function initDatabase() {
         END IF;
         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_type') THEN
           BEGIN
+            ALTER TYPE status_type ADD VALUE IF NOT EXISTS 'تصديق شخصي';
             ALTER TYPE status_type ADD VALUE IF NOT EXISTS 'تصديق ع حسابه الشخصي';
             ALTER TYPE status_type ADD VALUE IF NOT EXISTS 'تم التصديق';
           EXCEPTION
@@ -156,6 +158,11 @@ export async function initDatabase() {
       EXCEPTION
         WHEN undefined_object THEN NULL;
       END $$;
+
+      -- Non-destructive row data migration: Update any existing rows from old long status to new short status
+      UPDATE certificate_requests 
+      SET status = 'تصديق شخصي' 
+      WHERE status = 'تصديق ع حسابه الشخصي';
 
       -- Non-destructive column expansion: Ensure status column can fit long Arabic status strings
       DO $$
@@ -265,7 +272,7 @@ export async function getCertificates({
   limit = 10,
 } = {}) {
   const p = Math.max(1, parseInt(page, 10) || 1);
-  const l = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+  const l = Math.min(50000, Math.max(1, parseInt(limit, 10) || 10));
   const offset = (p - 1) * l;
 
   let whereClauses = [];
@@ -284,9 +291,16 @@ export async function getCertificates({
   }
 
   if (status && status.trim() && status !== "ALL") {
-    whereClauses.push(`status = $${paramIdx}`);
-    params.push(status.trim());
-    paramIdx++;
+    const trimmedStatus = status.trim();
+    if (trimmedStatus === "تصديق شخصي" || trimmedStatus === "تصديق ع حسابه الشخصي") {
+      whereClauses.push(`(status = $${paramIdx} OR status = 'تصديق ع حسابه الشخصي')`);
+      params.push("تصديق شخصي");
+      paramIdx++;
+    } else {
+      whereClauses.push(`status = $${paramIdx}`);
+      params.push(trimmedStatus);
+      paramIdx++;
+    }
   }
 
   if (academic_year && academic_year.trim() && academic_year !== "ALL") {
@@ -487,7 +501,7 @@ export async function getDashboardMetrics() {
       COUNT(*) FILTER (WHERE status = 'تمت كتابة الشهادة')::int as written,
       COUNT(*) FILTER (WHERE status = 'تم الرفع للتصديق')::int as submitted,
       COUNT(*) FILTER (WHERE status = 'تم التصديق')::int as certified,
-      COUNT(*) FILTER (WHERE status = 'تصديق ع حسابه الشخصي')::int as self_certified
+      COUNT(*) FILTER (WHERE status = 'تصديق شخصي' OR status = 'تصديق ع حسابه الشخصي')::int as self_certified
     FROM certificate_requests
   `;
   const res = await pool.query(query);
