@@ -24,6 +24,7 @@ import {
   validateCertificateRequest,
   PREDEFINED_GRADES,
   VALID_STATUSES,
+  normalizeStatus,
   formatGradeForExport,
   formatDateForExport,
 } from "../schemas/validation.js";
@@ -162,6 +163,14 @@ async function runTests() {
   assert(VALID_STATUSES.includes("تصديق ع حسابه الشخصي"), "Contains 'تصديق ع حسابه الشخصي'");
   assert(VALID_STATUSES.includes("تم التصديق"), "Contains 'تم التصديق'");
 
+  // normalizeStatus tests
+  assert(normalizeStatus("تصديق ع حسابه الشخصي") === "تصديق ع حسابه الشخصي", "normalizeStatus passes exact 'تصديق ع حسابه الشخصي'");
+  assert(normalizeStatus("  تصديق ع حسابه الشخصي  ") === "تصديق ع حسابه الشخصي", "normalizeStatus trims 'تصديق ع حسابه الشخصي'");
+  assert(normalizeStatus("تم التصديق") === "تم التصديق", "normalizeStatus passes exact 'تم التصديق'");
+  assert(normalizeStatus("  تم التصديق  ") === "تم التصديق", "normalizeStatus trims 'تم التصديق'");
+  assert(normalizeStatus("انتظار") === "انتظار", "normalizeStatus passes 'انتظار'");
+  assert(normalizeStatus(null) === "انتظار", "normalizeStatus defaults null to 'انتظار'");
+
   const reqSelfCertified = validateCertificateRequest({
     student_name: "سعيد كريم عبد الله النعيمي",
     grade_level: ["GRADE_10"],
@@ -260,6 +269,12 @@ async function runTests() {
     const submittedRecord = await updateCertificateStatus(recordNoSecNum.id, "تم الرفع للتصديق");
     assert(submittedRecord.status === "تم الرفع للتصديق", "Status successfully updated to 'تم الرفع للتصديق'");
 
+    const selfCertifiedRecord = await updateCertificateStatus(recordNoSecNum.id, "تصديق ع حسابه الشخصي");
+    assert(selfCertifiedRecord.status === "تصديق ع حسابه الشخصي", "Status successfully updated to 'تصديق ع حسابه الشخصي'");
+
+    const certifiedRecord = await updateCertificateStatus(recordNoSecNum.id, "تم التصديق");
+    assert(certifiedRecord.status === "تم التصديق", "Status successfully updated to 'تم التصديق'");
+
     const waitingRecord = await updateCertificateStatus(recordNoSecNum.id, "انتظار");
     assert(waitingRecord.status === "انتظار", "Status successfully reset to 'انتظار'");
 
@@ -268,6 +283,8 @@ async function runTests() {
     assert(typeof metrics.waiting === "number", "Dashboard metrics returns waiting count");
     assert(typeof metrics.written === "number", "Dashboard metrics returns written count");
     assert(typeof metrics.submitted === "number", "Dashboard metrics returns submitted count");
+    assert(typeof metrics.certified === "number", "Dashboard metrics returns certified count");
+    assert(typeof metrics.self_certified === "number", "Dashboard metrics returns self_certified count");
 
     await deleteCertificate(recordNoSecNum.id);
     const cleaned = await getCertificateById(recordNoSecNum.id);

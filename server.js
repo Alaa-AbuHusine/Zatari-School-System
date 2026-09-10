@@ -20,6 +20,7 @@ import {
   formatGradeForExport,
   formatDateForExport,
   VALID_STATUSES,
+  normalizeStatus,
 } from "./schemas/validation.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -250,6 +251,9 @@ app.put("/api/certificates/:id", async (req, res) => {
     }
 
     const { sanitizedData } = validation;
+    if (req.body.status) {
+      sanitizedData.status = normalizeStatus(req.body.status);
+    }
 
     // 2. Prevent duplicate security numbers (if provided, must not belong to ANOTHER record)
     if (sanitizedData.security_number) {
@@ -280,12 +284,13 @@ app.put("/api/certificates/:id", async (req, res) => {
 
 /**
  * PATCH /api/certificates/:id/status
- * Updates status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق)
+ * Updates status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق, تصديق ع حسابه الشخصي, تم التصديق)
  */
 app.patch("/api/certificates/:id/status", async (req, res) => {
   try {
     const { status, notes } = req.body;
-    if (!VALID_STATUSES.includes(status)) {
+    const normalizedStatus = normalizeStatus(status);
+    if (!VALID_STATUSES.includes(normalizedStatus)) {
       return res.status(400).json({
         success: false,
         message: `Invalid status value. Allowed statuses: ${VALID_STATUSES.join(", ")}`,
@@ -297,7 +302,7 @@ app.patch("/api/certificates/:id/status", async (req, res) => {
       return res.status(404).json({ success: false, message: "Record not found" });
     }
 
-    const updated = await updateCertificateStatus(req.params.id, status, notes);
+    const updated = await updateCertificateStatus(req.params.id, normalizedStatus, notes);
     res.json({ success: true, data: updated });
   } catch (error) {
     console.error("PATCH status error:", error);

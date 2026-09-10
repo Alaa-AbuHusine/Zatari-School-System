@@ -129,6 +129,32 @@
         </div>
       </section>
 
+      <!-- Secondary Compact Metrics Row (Completed / Final Statuses) -->
+      <section class="metrics-secondary-strip" aria-label="حالات الإنجاز والتصديق">
+        <div class="secondary-strip-header">
+          <svg class="strip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span class="strip-title" data-i18n="metricsArchivedTitle">مؤشرات الإنجاز والتصديق النهائي:</span>
+        </div>
+        <div class="secondary-chips-list">
+          <!-- تم التصديق Chip -->
+          <div class="metric-chip chip-certified" id="chipCertified" role="button" tabindex="0" title="عرض السجلات المصدقة" onclick="window.filterByQuickStatus && window.filterByQuickStatus('تم التصديق')">
+            <span class="chip-indicator dot-certified"></span>
+            <span class="chip-label" data-i18n="statCertifiedLabel">تم التصديق</span>
+            <span class="chip-count" id="statCertified">--</span>
+          </div>
+
+          <!-- تصديق ع حسابه الشخصي Chip -->
+          <div class="metric-chip chip-self-certified" id="chipSelfCertified" role="button" tabindex="0" title="عرض تصديق الحساب الشخصي" onclick="window.filterByQuickStatus && window.filterByQuickStatus('تصديق ع حسابه الشخصي')">
+            <span class="chip-indicator dot-self-certified"></span>
+            <span class="chip-label" data-i18n="statSelfCertifiedLabel">تصديق ع حسابه الشخصي</span>
+            <span class="chip-count" id="statSelfCertified">--</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Main Data Registry Table Section -->
       <section class="registry-section">
         <!-- Control / Filter Bar -->

@@ -107,6 +107,40 @@ export const VALID_STATUSES = [
 ];
 
 /**
+ * Normalizes input status into one of the 5 canonical status strings.
+ * Handles whitespace, slight dialect/keyboard variations, and English equivalents.
+ */
+export function normalizeStatus(val) {
+  if (!val || typeof val !== "string") return "انتظار";
+  const trimmed = val.trim();
+  if (VALID_STATUSES.includes(trimmed)) return trimmed;
+
+  // Handle common typing / encoding variations
+  if (trimmed.includes("حسابه") || trimmed.includes("Self-Financed") || trimmed.includes("الشخصي")) {
+    return "تصديق ع حسابه الشخصي";
+  }
+  if (
+    trimmed === "تم التصديق" ||
+    trimmed.includes("تم التصديق") ||
+    trimmed.includes("Certified") ||
+    trimmed.includes("Completed")
+  ) {
+    return "تم التصديق";
+  }
+  if (trimmed.includes("كتابة") || trimmed.includes("Written")) {
+    return "تمت كتابة الشهادة";
+  }
+  if (trimmed.includes("الرفع") || trimmed.includes("Submitted")) {
+    return "تم الرفع للتصديق";
+  }
+  if (trimmed.includes("انتظار") || trimmed.includes("Waiting")) {
+    return "انتظار";
+  }
+
+  return "انتظار";
+}
+
+/**
  * Validates security number (Barcode/Serial) - Completely Optional
  */
 export function validateSecurityNumber(secNum) {
@@ -224,8 +258,8 @@ export function validateCertificateRequest(data) {
     sanitized.request_date = new Date().toISOString().split("T")[0];
   }
 
-  // 7. Status (Strictly the 3 new Arabic statuses)
-  sanitized.status = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
+  // 7. Status (Canonical Arabic statuses)
+  sanitized.status = normalizeStatus(data.status);
   sanitized.notes = data.notes ? String(data.notes).trim() : null;
 
   // 8. Section (الشعبة) - Optional free text (e.g. "أ", "ب", "ج")

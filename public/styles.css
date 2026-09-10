@@ -352,6 +352,139 @@ html[dir="rtl"] .icon-next {
   margin-top: 3px;
 }
 
+/* ================= Secondary Metrics Strip ================= */
+.metrics-secondary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  margin-top: -8px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.secondary-strip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.strip-icon {
+  color: #10b981;
+}
+
+.secondary-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.metric-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.chip-certified {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.chip-certified:hover {
+  background-color: #d1fae5;
+  border-color: #6ee7b7;
+}
+
+.chip-self-certified {
+  background-color: #f5f3ff;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.chip-self-certified:hover {
+  background-color: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+.chip-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot-certified {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.dot-self-certified {
+  background-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border-radius: 10px;
+  line-height: 1;
+}
+
+.chip-certified .chip-count {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.chip-self-certified .chip-count {
+  background-color: #8b5cf6;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .metrics-secondary-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .secondary-chips-list {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .metric-chip {
+    flex: 1;
+    justify-content: space-between;
+  }
+}
+
 /* ================= Registry Section & Controls ================= */
 .registry-section {
   background: var(--bg-card);

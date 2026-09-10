@@ -1,16 +1,13 @@
 import pg from "pg";
 const { Pool } = pg;
 import "dotenv/config";
+import { VALID_STATUSES, normalizeStatus } from "../schemas/validation.js";
 
 // Dedicated School Constant
 export const HARDCODED_SCHOOL_NAME = "مدرسة مخيم الزعتري الأساسية الثانية للبنين";
 
-// Allowed Statuses
-export const VALID_STATUSES = [
-  "انتظار",
-  "تمت كتابة الشهادة",
-  "تم الرفع للتصديق",
-];
+// Re-export allowed statuses and normalizer from schema source of truth
+export { VALID_STATUSES, normalizeStatus };
 
 // Connection string from host environment variable (Render / Supabase)
 const connectionString = process.env.DATABASE_URL;
@@ -115,10 +112,23 @@ export async function initDatabase() {
 
       -- Non-destructive status migration: Ensure any strict CHECK constraints are removed to allow new custom statuses
       DO $$
+      DECLARE
+        r RECORD;
       BEGIN
         ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS certificate_requests_status_check;
         ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS chk_certificate_status;
         ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS check_status;
+
+        FOR r IN (
+          SELECT con.conname
+          FROM pg_constraint con
+          JOIN pg_class rel ON rel.oid = con.conrelid
+          WHERE rel.relname = 'certificate_requests' 
+            AND con.contype = 'c'
+            AND pg_get_constraintdef(con.oid) ILIKE '%status%'
+        ) LOOP
+          EXECUTE 'ALTER TABLE certificate_requests DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname) || ' CASCADE';
+        END LOOP;
       EXCEPTION
         WHEN undefined_object THEN NULL;
         WHEN undefined_table THEN NULL;
@@ -365,7 +375,7 @@ export async function createCertificate(data) {
       : null;
 
   const sec = data.section && String(data.section).trim() ? String(data.section).trim() : null;
-  const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
+  const finalStatus = normalizeStatus(data.status);
 
   const query = `
     INSERT INTO certificate_requests (
@@ -410,7 +420,7 @@ export async function updateCertificate(id, data) {
       : null;
 
   const sec = data.section !== undefined ? (data.section ? String(data.section).trim() : null) : null;
-  const finalStatus = VALID_STATUSES.includes(data.status) ? data.status : "انتظار";
+  const finalStatus = normalizeStatus(data.status);
 
   const query = `
     UPDATE certificate_requests 
@@ -447,7 +457,7 @@ export async function updateCertificate(id, data) {
  * Updates status of an attestation
  */
 export async function updateCertificateStatus(id, status, notes = null) {
-  const finalStatus = VALID_STATUSES.includes(status) ? status : "انتظار";
+  const finalStatus = normalizeStatus(status);
   const query = `
     UPDATE certificate_requests 
     SET status = $1, notes = COALESCE($2, notes), updated_at = CURRENT_TIMESTAMP
@@ -475,7 +485,9 @@ export async function getDashboardMetrics() {
       COUNT(*)::int as total,
       COUNT(*) FILTER (WHERE status = 'انتظار')::int as waiting,
       COUNT(*) FILTER (WHERE status = 'تمت كتابة الشهادة')::int as written,
-      COUNT(*) FILTER (WHERE status = 'تم الرفع للتصديق')::int as submitted
+      COUNT(*) FILTER (WHERE status = 'تم الرفع للتصديق')::int as submitted,
+      COUNT(*) FILTER (WHERE status = 'تم التصديق')::int as certified,
+      COUNT(*) FILTER (WHERE status = 'تصديق ع حسابه الشخصي')::int as self_certified
     FROM certificate_requests
   `;
   const res = await pool.query(query);
@@ -486,6 +498,8 @@ export async function getDashboardMetrics() {
     waiting: row.waiting || 0,
     written: row.written || 0,
     submitted: row.submitted || 0,
+    certified: row.certified || 0,
+    self_certified: row.self_certified || 0,
   };
 }
 

@@ -19,7 +19,7 @@ const i18n = {
     exportCsv: "Export to Excel CSV",
     btnNewRequest: "New Attestation Request",
 
-    // Stats (3 cards)
+    // Stats (3 cards + 2 chips)
     statTotalLabel: "Total Attestations",
     statTotalFootnote: "Registered requests",
     statWaitingLabel: "Waiting",
@@ -28,6 +28,9 @@ const i18n = {
     statWrittenFootnote: "Certificate prepared",
     statSubmittedLabel: "Submitted for Attestation",
     statSubmittedFootnote: "Submitted for approval",
+    metricsArchivedTitle: "Final Attestation & Completion:",
+    statCertifiedLabel: "Certified",
+    statSelfCertifiedLabel: "Self-Financed Attestation",
 
     // Search & Filters
     searchPlaceholder: "Instant search by Security # or Student Name...",
@@ -151,7 +154,7 @@ const i18n = {
     exportCsv: "تصدير كشف إكسل (CSV)",
     btnNewRequest: "إدخال طلب تصديق جديد",
 
-    // Stats (3 cards)
+    // Stats (3 cards + 2 chips)
     statTotalLabel: "إجمالي التصاديق",
     statTotalFootnote: "طلبات مسجلة بالنظام",
     statWaitingLabel: "انتظار",
@@ -160,6 +163,9 @@ const i18n = {
     statWrittenFootnote: "جاهزة ومكتوبة بالكامل",
     statSubmittedLabel: "تم الرفع للتصديق",
     statSubmittedFootnote: "مرفوعة للاعتماد والتصديق",
+    metricsArchivedTitle: "مؤشرات الإنجاز والتصديق النهائي:",
+    statCertifiedLabel: "تم التصديق",
+    statSelfCertifiedLabel: "تصديق ع حسابه الشخصي",
 
     // Search & Filters
     searchPlaceholder: "بحث فوري بالرقم الأمني أو اسم الطالب...",
@@ -309,11 +315,13 @@ const DOM = {
   btnLangToggle: document.getElementById("btnLangToggle"),
   langToggleText: document.getElementById("langToggleText"),
 
-  // Stats (4 cards)
+  // Stats (3 primary cards + 2 secondary chips)
   statTotal: document.getElementById("statTotal"),
   statWaiting: document.getElementById("statWaiting"),
   statWritten: document.getElementById("statWritten"),
   statSubmitted: document.getElementById("statSubmitted"),
+  statCertified: document.getElementById("statCertified"),
+  statSelfCertified: document.getElementById("statSelfCertified"),
 
   // Search & Filters
   searchInput: document.getElementById("instantSearchInput"),
@@ -803,7 +811,7 @@ async function loadCertificates() {
 }
 
 /**
- * Fetch dashboard statistics (total, waiting, written, submitted)
+ * Fetch dashboard statistics (total, waiting, written, submitted, certified, self_certified)
  */
 async function fetchDashboardMetrics() {
   try {
@@ -814,11 +822,26 @@ async function fetchDashboardMetrics() {
       if (DOM.statWaiting) DOM.statWaiting.textContent = data.data.waiting ?? 0;
       if (DOM.statWritten) DOM.statWritten.textContent = data.data.written ?? 0;
       if (DOM.statSubmitted) DOM.statSubmitted.textContent = data.data.submitted ?? 0;
+      if (DOM.statCertified) DOM.statCertified.textContent = data.data.certified ?? 0;
+      if (DOM.statSelfCertified) DOM.statSelfCertified.textContent = data.data.self_certified ?? 0;
     }
   } catch (err) {
     console.error("Metrics error:", err);
   }
 }
+
+/**
+ * Filter the certificates table by clicking a quick status chip
+ */
+function filterByQuickStatus(statusValue) {
+  if (DOM.statusFilter) {
+    DOM.statusFilter.value = statusValue;
+    state.statusFilter = statusValue;
+    state.currentPage = 1;
+    fetchCertificates();
+  }
+}
+window.filterByQuickStatus = filterByQuickStatus;
 
 /**
  * Handle request form submission (Supports both CREATE via POST and EDIT via PUT)
@@ -1341,10 +1364,22 @@ async function openEditModal(id) {
   }
   DOM.academicYearInput.value = record.academic_year || "";
   formState.academic_year = DOM.academicYearInput.value;
-  DOM.requestDateInput.value = record.request_date || new Date().toISOString().split("T")[0];
-  formState.request_date = DOM.requestDateInput.value;
-  DOM.statusInput.value = record.status || "انتظار";
-  formState.status = DOM.statusInput.value;
+  // Pre-select status safely matching option values
+  const rawStatus = (record.status || "انتظار").trim();
+  let matchedOption = false;
+  if (DOM.statusInput && DOM.statusInput.options) {
+    for (let i = 0; i < DOM.statusInput.options.length; i++) {
+      if (DOM.statusInput.options[i].value.trim() === rawStatus) {
+        DOM.statusInput.selectedIndex = i;
+        matchedOption = true;
+        break;
+      }
+    }
+  }
+  if (!matchedOption && DOM.statusInput) {
+    DOM.statusInput.value = rawStatus;
+  }
+  formState.status = DOM.statusInput ? DOM.statusInput.value : rawStatus;
   DOM.notesInput.value = record.notes || "";
   formState.notes = DOM.notesInput.value;
 
