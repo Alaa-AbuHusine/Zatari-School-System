@@ -3,6 +3,7 @@ import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "dotenv/config";
+import ExcelJS from "exceljs";
 import {
   getCertificates,
   getCertificateById,
@@ -129,69 +130,212 @@ app.get("/api/certificates/verify/:securityNumber", async (req, res) => {
 
 /**
  * GET /api/certificates/export
- * Exports records as CSV matching the required Arabic Excel format,
- * optionally filtered by status query parameter.
+ * Exports records matching the school's official sheet style:
+ * 1. Native .xlsx file with RTL orientation, green title row, yellow table headers, and clean borders.
+ * 2. Excludes draft statuses ('انتظار' and 'تمت كتابة الشهادة') by default unless explicitly filtered.
+ * 3. Exact 7-column sequence: الرقم, اسم الطالب من اربع مقاطع, اسم المدرسة, الصف, الرقم الامني, تاريخ الطلب, العام الدراسي.
+ * 4. Supports ?format=csv as fallback.
  */
 app.get("/api/certificates/export", async (req, res) => {
   try {
     const rawStatus = req.query.status ? String(req.query.status).trim() : "";
-    const filterStatus =
-      rawStatus && rawStatus !== "ALL" && rawStatus !== "جميع الحالات"
-        ? normalizeStatus(rawStatus)
-        : null;
+    const isExplicitStatus = Boolean(
+      rawStatus &&
+      rawStatus !== "ALL" &&
+      rawStatus !== "جميع الحالات"
+    );
+    const filterStatus = isExplicitStatus ? normalizeStatus(rawStatus) : null;
+    const format = (req.query.format || "xlsx").toLowerCase().trim();
 
-    console.log(`[Export] Request received with status query: "${rawStatus}" -> Normalized filter: "${filterStatus || "ALL"}"`);
+    console.log(
+      `[Export] Request received with status: "${rawStatus}" (explicit: ${isExplicitStatus}) -> Normalized filter: "${filterStatus || "ALL"}", format: ${format}`
+    );
 
-    const result = await getCertificates({
-      status: filterStatus || undefined,
-      limit: 50000,
-    });
+    let result;
+    if (filterStatus) {
+      // Explicitly filtered by user: fetch ONLY records for this status
+      result = await getCertificates({
+        status: filterStatus,
+        limit: 50000,
+      });
+    } else {
+      // Not explicitly filtered: EXCLUDE draft statuses ('انتظار' and 'تمت كتابة الشهادة')
+      result = await getCertificates({
+        exclude_statuses: ["انتظار", "تمت كتابة الشهادة"],
+        limit: 50000,
+      });
+    }
     const records = result.records;
+
+    const dateStr = new Date().toISOString().split("T")[0];
+    const baseName = filterStatus
+      ? `Export_${filterStatus.replace(/\s+/g, "_")}_${dateStr}`
+      : `Export_All_${dateStr}`;
 
     const headers = [
       "الرقم",
       "اسم الطالب من اربع مقاطع",
       "اسم المدرسة",
       "الصف",
-      "الشعبة",
       "الرقم الامني",
       "تاريخ الطلب",
       "العام الدراسي",
-      "ملاحظات",
     ];
 
-    const rows = records.map((r) => {
+    if (format === "csv") {
+      const rows = records.map((r) => {
+        const formattedGrade = formatGradeForExport(r.grade_level);
+        const formattedDate = formatDateForExport(r.request_date);
+
+        return [
+          r.id,
+          `"${(r.student_name || "").replace(/"/g, '""')}"`,
+          `"${HARDCODED_SCHOOL_NAME}"`,
+          `"${formattedGrade}"`,
+          `"${(r.security_number || "").replace(/"/g, '""')}"`,
+          `"${formattedDate}"`,
+          `"${(r.academic_year || "").replace(/"/g, '""')}"`,
+        ];
+      });
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
+      const filename = `${baseName}.csv`;
+      const encodedFilename = encodeURIComponent(filename);
+
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
+      );
+      return res.send(csvContent);
+    }
+
+    // Default: Native .xlsx Workbook with official school visual styling
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = HARDCODED_SCHOOL_NAME;
+    workbook.lastModifiedBy = HARDCODED_SCHOOL_NAME;
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const worksheet = workbook.addWorksheet("كشف تصديق الشهادات", {
+      views: [{ rightToLeft: true, state: "normal" }],
+      pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    });
+
+    // Configure exact 7 column widths (A to G)
+    worksheet.columns = [
+      { key: "id", width: 10 },
+      { key: "student_name", width: 34 },
+      { key: "school_name", width: 44 },
+      { key: "grade_level", width: 18 },
+      { key: "security_number", width: 22 },
+      { key: "request_date", width: 16 },
+      { key: "academic_year", width: 16 },
+    ];
+
+    // Row 1: Green Main Title Row (Merged A1:G1)
+    const titleRow = worksheet.getRow(1);
+    titleRow.height = 36;
+    worksheet.mergeCells("A1:G1");
+    const titleCell = worksheet.getCell("A1");
+    const titleText = filterStatus
+      ? `كشف تصديق شهادات الطلاب (${filterStatus}) - ${HARDCODED_SCHOOL_NAME}`
+      : `كشف تصديق شهادات الطلاب - ${HARDCODED_SCHOOL_NAME}`;
+    titleCell.value = titleText;
+    titleCell.alignment = { vertical: "middle", horizontal: "center" };
+    titleCell.font = { name: "Calibri", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
+    titleCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF166534" }, // Forest Green (Official School Header)
+    };
+    titleCell.border = {
+      top: { style: "medium", color: { argb: "FF14532D" } },
+      left: { style: "medium", color: { argb: "FF14532D" } },
+      bottom: { style: "medium", color: { argb: "FF14532D" } },
+      right: { style: "medium", color: { argb: "FF14532D" } },
+    };
+
+    // Row 2: Yellow Table Header Row (A2:G2)
+    const headerRow = worksheet.getRow(2);
+    headerRow.height = 28;
+    headers.forEach((title, idx) => {
+      const cell = headerRow.getCell(idx + 1);
+      cell.value = title;
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FF000000" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFEB3B" }, // Official School Yellow
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF9CA3AF" } },
+        left: { style: "thin", color: { argb: "FF9CA3AF" } },
+        bottom: { style: "medium", color: { argb: "FF4B5563" } },
+        right: { style: "thin", color: { argb: "FF9CA3AF" } },
+      };
+    });
+
+    // Rows 3+: Data Rows (Alternating clean styling, borders, and proper alignments)
+    records.forEach((r, index) => {
+      const rowIndex = index + 3;
+      const row = worksheet.getRow(rowIndex);
+      row.height = 24;
+
       const formattedGrade = formatGradeForExport(r.grade_level);
       const formattedDate = formatDateForExport(r.request_date);
 
-      return [
+      row.values = [
         r.id,
-        `"${(r.student_name || "").replace(/"/g, '""')}"`,
-        `"${HARDCODED_SCHOOL_NAME}"`,
-        `"${formattedGrade}"`,
-        `"${(r.section || "").replace(/"/g, '""')}"`,
-        `"${(r.security_number || "").replace(/"/g, '""')}"`,
-        `"${formattedDate}"`,
-        `"${(r.academic_year || "").replace(/"/g, '""')}"`,
-        `"${(r.notes || "").replace(/"/g, '""')}"`,
+        r.student_name || "",
+        HARDCODED_SCHOOL_NAME,
+        formattedGrade,
+        r.security_number || "",
+        formattedDate,
+        r.academic_year || "",
       ];
+
+      const isEven = index % 2 === 1;
+      const rowBgColor = isEven ? "FFF9FAFB" : "FFFFFFFF";
+
+      for (let col = 1; col <= 7; col++) {
+        const cell = row.getCell(col);
+        cell.font = { name: "Calibri", size: 11, color: { argb: "FF1F2937" } };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: rowBgColor },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFE5E7EB" } },
+          left: { style: "thin", color: { argb: "FFE5E7EB" } },
+          bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+          right: { style: "thin", color: { argb: "FFE5E7EB" } },
+        };
+
+        // Col 2 (Student Name) is right-aligned in Arabic; Col 1, 3, 4, 5, 6, 7 are centered
+        if (col === 2) {
+          cell.alignment = { vertical: "middle", horizontal: "right" };
+        } else {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+        }
+      }
     });
 
-    // UTF-8 BOM (\uFEFF) ensures Excel opens Arabic CSV without encoding issues
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
-
-    const dateStr = new Date().toISOString().split("T")[0];
-    const filename = filterStatus
-      ? `Export_${filterStatus.replace(/\s+/g, "_")}_${dateStr}.csv`
-      : `Export_All_${dateStr}.csv`;
+    const buffer = await workbook.xlsx.writeBuffer();
+    const filename = `${baseName}.xlsx`;
     const encodedFilename = encodeURIComponent(filename);
 
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
     );
-    res.send(csvContent);
+    res.send(Buffer.from(buffer));
   } catch (error) {
     console.error("Export error:", error);
     res.status(500).json({ success: false, error: "Failed to export data" });

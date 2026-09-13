@@ -266,6 +266,7 @@ export async function initDatabase() {
 export async function getCertificates({
   search = "",
   status = "",
+  exclude_statuses = [],
   academic_year = "",
   grade = "",
   page = 1,
@@ -290,7 +291,7 @@ export async function getCertificates({
     paramIdx++;
   }
 
-  if (status && status.trim() && status !== "ALL") {
+  if (status && status.trim() && status !== "ALL" && status !== "جميع الحالات") {
     const trimmedStatus = status.trim();
     if (trimmedStatus === "تصديق شخصي" || trimmedStatus === "تصديق ع حسابه الشخصي") {
       whereClauses.push(`(status = $${paramIdx} OR status = 'تصديق ع حسابه الشخصي')`);
@@ -300,6 +301,13 @@ export async function getCertificates({
       whereClauses.push(`status = $${paramIdx}`);
       params.push(trimmedStatus);
       paramIdx++;
+    }
+  } else if (Array.isArray(exclude_statuses) && exclude_statuses.length > 0) {
+    const validExcludes = exclude_statuses.map((s) => String(s).trim()).filter(Boolean);
+    if (validExcludes.length > 0) {
+      const placeholders = validExcludes.map(() => `$${paramIdx++}`).join(", ");
+      whereClauses.push(`status NOT IN (${placeholders})`);
+      params.push(...validExcludes);
     }
   }
 

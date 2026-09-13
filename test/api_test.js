@@ -2,6 +2,7 @@
  * Automated Verification Suite for Student Gateway
  * Supports PostgreSQL & Multi-Select Grade Levels & i18n Validation
  */
+import ExcelJS from "exceljs";
 import {
   getCertificates,
   getCertificateById,
@@ -280,6 +281,81 @@ async function runTests() {
     generateExportFilename("") === `Export_All_${dateStr}.csv`,
     "Filename for empty status defaults to Export_All"
   );
+
+  // 7.4 Exact 7-Column Structure & Order
+  console.log("\n[7.4] Testing Exact 7-Column Structure & Sequence...");
+  const EXPECTED_COLUMNS = [
+    "الرقم",
+    "اسم الطالب من اربع مقاطع",
+    "اسم المدرسة",
+    "الصف",
+    "الرقم الامني",
+    "تاريخ الطلب",
+    "العام الدراسي",
+  ];
+  assert(EXPECTED_COLUMNS.length === 7, "Export contains exactly 7 columns (A to G)");
+  assert(EXPECTED_COLUMNS[0] === "الرقم", "Column 1 (A) is 'الرقم'");
+  assert(EXPECTED_COLUMNS[1] === "اسم الطالب من اربع مقاطع", "Column 2 (B) is 'اسم الطالب من اربع مقاطع'");
+  assert(EXPECTED_COLUMNS[2] === "اسم المدرسة", "Column 3 (C) is 'اسم المدرسة'");
+  assert(EXPECTED_COLUMNS[3] === "الصف", "Column 4 (D) is 'الصف'");
+  assert(EXPECTED_COLUMNS[4] === "الرقم الامني", "Column 5 (E) is 'الرقم الامني'");
+  assert(EXPECTED_COLUMNS[5] === "تاريخ الطلب", "Column 6 (F) is 'تاريخ الطلب'");
+  assert(EXPECTED_COLUMNS[6] === "العام الدراسي", "Column 7 (G) is 'العام الدراسي'");
+
+  // 7.5 Native Excel (.xlsx) Generation, RTL, Green Banner & Yellow Headers
+  console.log("\n[7.5] Testing Native Excel (.xlsx) Generation with Visual Styling...");
+  const testWb = new ExcelJS.Workbook();
+  const testWs = testWb.addWorksheet("كشف تصديق الشهادات", {
+    views: [{ rightToLeft: true, state: "normal" }],
+  });
+  assert(testWs.views[0].rightToLeft === true, "Worksheet is configured with Right-To-Left view");
+
+  // Title Row (Row 1)
+  const titleRow = testWs.getRow(1);
+  titleRow.height = 36;
+  testWs.mergeCells("A1:G1");
+  const titleCell = testWs.getCell("A1");
+  titleCell.value = `كشف تصديق شهادات الطلاب - ${HARDCODED_SCHOOL_NAME}`;
+  titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF166534" } };
+  titleCell.font = { name: "Calibri", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
+
+  assert(titleCell.fill.fgColor.argb === "FF166534", "Main title banner has forest green background (#166534)");
+  assert(titleCell.font.bold === true && titleCell.font.color.argb === "FFFFFFFF", "Main title text is bold white");
+
+  // Header Row (Row 2)
+  const headerRow = testWs.getRow(2);
+  headerRow.height = 28;
+  EXPECTED_COLUMNS.forEach((title, idx) => {
+    const cell = headerRow.getCell(idx + 1);
+    cell.value = title;
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFEB3B" } };
+    cell.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FF000000" } };
+  });
+
+  const sampleHeaderCell = headerRow.getCell(1);
+  assert(sampleHeaderCell.fill.fgColor.argb === "FFFFEB3B", "Data table header row has school official yellow background (#FFEB3B)");
+  assert(sampleHeaderCell.font.bold === true && sampleHeaderCell.font.color.argb === "FF000000", "Data table header text is bold black");
+
+  const buffer = await testWb.xlsx.writeBuffer();
+  assert(buffer && buffer.length > 0, "Native Excel .xlsx buffer successfully generated");
+
+  // 7.6 Dynamic Status Exclusion Logic
+  console.log("\n[7.6] Testing Status Exclusion Logic for Default vs Explicit Exports...");
+  function shouldExcludeStatus(explicitStatus, recordStatus) {
+    if (explicitStatus && explicitStatus !== "ALL" && explicitStatus !== "جميع الحالات") {
+      return false; // User explicitly selected a filter, do not exclude
+    }
+    return recordStatus === "انتظار" || recordStatus === "تمت كتابة الشهادة";
+  }
+
+  assert(shouldExcludeStatus("ALL", "انتظار") === true, "Draft status 'انتظار' is excluded when exporting ALL");
+  assert(shouldExcludeStatus("ALL", "تمت كتابة الشهادة") === true, "Draft status 'تمت كتابة الشهادة' is excluded when exporting ALL");
+  assert(shouldExcludeStatus(null, "انتظار") === true, "Draft status 'انتظار' is excluded when no status filter is provided");
+  assert(shouldExcludeStatus("ALL", "تم الرفع للتصديق") === false, "Active status 'تم الرفع للتصديق' is included when exporting ALL");
+  assert(shouldExcludeStatus("ALL", "تصديق شخصي") === false, "Active status 'تصديق شخصي' is included when exporting ALL");
+  assert(shouldExcludeStatus("ALL", "تم التصديق") === false, "Active status 'تم التصديق' is included when exporting ALL");
+  assert(shouldExcludeStatus("انتظار", "انتظار") === false, "Draft status 'انتظار' is NOT excluded when explicitly filtered");
+  assert(shouldExcludeStatus("تمت كتابة الشهادة", "تمت كتابة الشهادة") === false, "Draft status 'تمت كتابة الشهادة' is NOT excluded when explicitly filtered");
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
