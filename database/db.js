@@ -313,10 +313,103 @@ export async function getCertificates({
     }
   }
 
-  if (academic_year && academic_year.trim() && academic_year !== "ALL") {
-    whereClauses.push(`academic_year = $${paramIdx}`);
-    params.push(academic_year.trim());
-    paramIdx++;
+  if (
+    academic_year &&
+    academic_year.trim() &&
+    academic_year !== "ALL" &&
+    academic_year !== "جميع الأعوام الدراسية"
+  ) {
+    const trimmedYear = academic_year.trim();
+    const match = trimmedYear.match(/^(\d{4})/);
+    const startYear = match ? parseInt(match[1], 10) : null;
+
+    if (startYear) {
+      // Smart Academic Year Progression Matching:
+      // Includes records directly matching the year string,
+      // as well as multi-grade progressions active/enrolled in that year
+      // (e.g. 9 + 10 + 11 records spanning into this period).
+      const pExact = paramIdx++;
+      const pLike = paramIdx++;
+      const pT1 = paramIdx++;
+      const pT2 = paramIdx++;
+      const pT3 = paramIdx++;
+      const pTm1 = paramIdx++;
+      const pTm2 = paramIdx++;
+      const pTm3 = paramIdx++;
+
+      whereClauses.push(`(
+        academic_year = $${pExact}
+        OR academic_year ILIKE $${pLike}
+        OR (
+          academic_year ~ '^[0-9]{4}' AND (
+            -- Completion-anchored progression (base year is T+1, T+2, or T+3)
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pT1}
+              AND (
+                (grade_level ILIKE '%TAWJIHI%' AND (grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)') AND (grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)') AND (grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)'))
+              )
+            )
+            OR
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pT2}
+              AND (
+                (grade_level ILIKE '%TAWJIHI%' AND (grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)') AND (grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)'))
+              )
+            )
+            OR
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pT3}
+              AND (
+                grade_level ILIKE '%TAWJIHI%' AND (grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)')
+              )
+            )
+            -- Start-anchored progression (base year is T-1, T-2, or T-3)
+            OR
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pTm1}
+              AND (
+                ((grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)') AND (grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)') AND (grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)') AND grade_level ILIKE '%TAWJIHI%')
+              )
+            )
+            OR
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pTm2}
+              AND (
+                ((grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)') AND (grade_level ILIKE '%GRADE_11%' OR grade_level ~ '(^|[^0-9])11([^0-9]|$)')) OR
+                ((grade_level ILIKE '%GRADE_10%' OR grade_level ~ '(^|[^0-9])10([^0-9]|$)') AND grade_level ILIKE '%TAWJIHI%')
+              )
+            )
+            OR
+            (
+              CAST(SUBSTRING(academic_year FROM '^[0-9]{4}') AS INTEGER) = $${pTm3}
+              AND (
+                (grade_level ILIKE '%GRADE_9%' OR grade_level ~ '(^|[^0-9])9([^0-9]|$)') AND grade_level ILIKE '%TAWJIHI%'
+              )
+            )
+          )
+        )
+      )`);
+
+      params.push(
+        trimmedYear,
+        `%${trimmedYear}%`,
+        startYear + 1,
+        startYear + 2,
+        startYear + 3,
+        startYear - 1,
+        startYear - 2,
+        startYear - 3
+      );
+    } else {
+      whereClauses.push(`academic_year = $${paramIdx}`);
+      params.push(trimmedYear);
+      paramIdx++;
+    }
   }
 
   if (grade && grade.trim() && grade !== "ALL") {

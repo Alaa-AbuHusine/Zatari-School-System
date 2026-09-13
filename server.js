@@ -415,8 +415,19 @@ app.put("/api/certificates/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "Certificate request not found" });
     }
 
+    // Gracefully preserve existing grade_level if omitted or empty during partial updates
+    const bodyData = { ...req.body };
+    if (
+      (!bodyData.grade_level ||
+        (Array.isArray(bodyData.grade_level) && bodyData.grade_level.length === 0) ||
+        (typeof bodyData.grade_level === "string" && !bodyData.grade_level.trim())) &&
+      existing.grade_level
+    ) {
+      bodyData.grade_level = existing.grade_level;
+    }
+
     // 1. Validate payload
-    const validation = validateCertificateRequest(req.body);
+    const validation = validateCertificateRequest(bodyData);
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,

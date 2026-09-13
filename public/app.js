@@ -825,6 +825,190 @@ function updateGradesSelectedBadge() {
 }
 
 // ==========================================
+// Grade & Academic Year Helpers
+// ==========================================
+
+function normalizeGradeKeyClient(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  const lower = s.toLowerCase();
+
+  if (
+    s === "GRADE_9" ||
+    s === "9" ||
+    lower === "grade 9" ||
+    s === "الصف التاسع" ||
+    s.includes("تاسع") ||
+    lower.includes("grade 9")
+  ) {
+    return "GRADE_9";
+  }
+  if (
+    s === "GRADE_10" ||
+    s === "10" ||
+    lower === "grade 10" ||
+    s === "العاشر" ||
+    s === "الصف العاشر" ||
+    s.includes("عاشر") ||
+    lower.includes("grade 10")
+  ) {
+    return "GRADE_10";
+  }
+  if (
+    s === "GRADE_11_LIT" ||
+    lower === "grade 11 lit" ||
+    lower === "grade 11 arts" ||
+    s.includes("ادبي") ||
+    s.includes("أدبي")
+  ) {
+    return "GRADE_11_LIT";
+  }
+  if (
+    s === "GRADE_11_SCI" ||
+    s === "GRADE_11" ||
+    s === "11" ||
+    lower === "grade 11" ||
+    lower.includes("grade 11 science") ||
+    s.includes("علمي") ||
+    s.includes("حادي عشر")
+  ) {
+    return "GRADE_11_SCI";
+  }
+  if (
+    s === "TAWJIHI" ||
+    s === "12" ||
+    lower === "tawjihi" ||
+    lower === "grade 12" ||
+    s.includes("توجيهي") ||
+    s.includes("ثانوية")
+  ) {
+    return "TAWJIHI";
+  }
+  return null;
+}
+
+/**
+ * Parses any grade representation (array, JSON, composite string '9+10', numeric) into canonical keys
+ */
+function parseGradeKeys(gradeInput) {
+  if (!gradeInput) return [];
+  let list = [];
+  if (Array.isArray(gradeInput)) {
+    list = gradeInput;
+  } else if (typeof gradeInput === "number") {
+    list = [String(gradeInput)];
+  } else if (typeof gradeInput === "string") {
+    const trimmed = gradeInput.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        list = JSON.parse(trimmed);
+      } catch {
+        list = [trimmed];
+      }
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  const tokens = [];
+  for (const item of list) {
+    if (item === null || item === undefined) continue;
+    const s = String(item).trim();
+    if (s.includes("+")) {
+      s.split("+").forEach((t) => tokens.push(t.trim()));
+    } else if (s.includes(";")) {
+      s.split(";").forEach((t) => tokens.push(t.trim()));
+    } else if (s.includes(",")) {
+      s.split(",").forEach((t) => tokens.push(t.trim()));
+    } else {
+      tokens.push(s);
+    }
+  }
+
+  const result = new Set();
+  for (const token of tokens) {
+    const key = normalizeGradeKeyClient(token);
+    if (key) result.add(key);
+  }
+  return Array.from(result);
+}
+
+function parseAcademicYearStart(yearStr) {
+  if (!yearStr || typeof yearStr !== "string") return null;
+  const match = yearStr.trim().match(/^(\d{4})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function extractGradeNumbers(gradeInput) {
+  if (!gradeInput) return [];
+  const keys = parseGradeKeys(gradeInput);
+  const matched = new Set();
+  for (const key of keys) {
+    if (key === "GRADE_9") matched.add(9);
+    else if (key === "GRADE_10") matched.add(10);
+    else if (key === "GRADE_11_SCI" || key === "GRADE_11_LIT") matched.add(11);
+    else if (key === "TAWJIHI") matched.add(12);
+  }
+  return Array.from(matched).sort((a, b) => a - b);
+}
+
+/**
+ * Smart timeline progression matching for academic year
+ */
+function isRecordActiveInAcademicYear(record, targetAcademicYear) {
+  if (!targetAcademicYear || targetAcademicYear === "ALL" || targetAcademicYear === "جميع الأعوام الدراسية") {
+    return true;
+  }
+  if (!record || !record.academic_year) return false;
+
+  const targetTrimmed = targetAcademicYear.trim();
+  const recTrimmed = String(record.academic_year).trim();
+
+  if (recTrimmed === targetTrimmed || recTrimmed.includes(targetTrimmed) || targetTrimmed.includes(recTrimmed)) {
+    return true;
+  }
+
+  const targetStart = parseAcademicYearStart(targetTrimmed);
+  const recStart = parseAcademicYearStart(recTrimmed);
+  if (!targetStart || !recStart) return false;
+  if (targetStart === recStart) return true;
+
+  const grades = extractGradeNumbers(record.grade_level);
+  if (grades.length === 0) return false;
+
+  const gMax = grades[grades.length - 1];
+
+  // Completion-anchored progression (recStart corresponds to gMax)
+  for (const g of grades) {
+    const y = recStart - (gMax - g);
+    if (y === targetStart) return true;
+  }
+
+  return false;
+}
+
+function syncYearFilterOptions(records) {
+  if (!DOM.yearFilter || !Array.isArray(records)) return;
+  const existingOptions = new Set(Array.from(DOM.yearFilter.options).map((o) => o.value));
+  for (const r of records) {
+    if (r.academic_year && /^\d{4}\/\d{4}$/.test(r.academic_year.trim())) {
+      const yr = r.academic_year.trim();
+      if (!existingOptions.has(yr)) {
+        const opt = document.createElement("option");
+        opt.value = yr;
+        opt.textContent = yr;
+        DOM.yearFilter.appendChild(opt);
+        existingOptions.add(yr);
+      }
+    }
+  }
+}
+
+window.parseGradeKeys = parseGradeKeys;
+window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
+window.extractGradeNumbers = extractGradeNumbers;
+
+// ==========================================
 // API Operations
 // ==========================================
 
@@ -851,6 +1035,7 @@ async function loadCertificates() {
       state.totalPages = data.pagination.totalPages;
       state.totalRecords = data.pagination.total;
 
+      syncYearFilterOptions(data.data);
       renderTable(data.data);
       renderPagination(data.pagination);
     } else {
@@ -903,7 +1088,16 @@ async function handleFormSubmit(e) {
   flushAllFormDebouncers();
   clearAllErrors();
 
-  const selectedGradesArray = Array.from(state.selectedGrades);
+  let selectedGradesArray = Array.from(state.selectedGrades);
+
+  // If in edit mode and no grades are selected in the UI, gracefully preserve existing record grades
+  if (state.editingId && selectedGradesArray.length === 0) {
+    const existing = state.records.find((r) => r.id === state.editingId);
+    if (existing && existing.grade_level) {
+      selectedGradesArray = parseGradeKeys(existing.grade_level);
+    }
+  }
+
   const secNum = DOM.securityNumberInput.value.trim().toUpperCase();
 
   const payload = {
@@ -1545,17 +1739,10 @@ async function openEditModal(id) {
 
   updateWordCounter();
 
-  // Pre-fill grade pills
+  // Pre-fill grade pills (supports numeric like 9, 10, multi-grade like 9+10, 9 + 10, or canonical keys)
   state.selectedGrades.clear();
-  const gradesArray = Array.isArray(record.grade_level)
-    ? record.grade_level
-    : typeof record.grade_level === "string"
-    ? record.grade_level.startsWith("[")
-      ? JSON.parse(record.grade_level)
-      : [record.grade_level]
-    : [];
-
-  gradesArray.forEach((g) => state.selectedGrades.add(g));
+  const canonicalKeys = parseGradeKeys(record.grade_level);
+  canonicalKeys.forEach((g) => state.selectedGrades.add(g));
 
   document.querySelectorAll(".grade-pill-item").forEach((pill) => {
     const grade = pill.getAttribute("data-grade");

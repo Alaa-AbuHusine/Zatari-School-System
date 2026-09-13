@@ -23,23 +23,80 @@ export const PREDEFINED_GRADES = [
 export const VALID_GRADE_KEYS = PREDEFINED_GRADES.map((g) => g.key);
 
 /**
- * Normalizes a grade input string or key into a canonical key
+ * Normalizes a grade input string, number, or key into a canonical key
  */
 export function normalizeGradeKey(val) {
-  if (!val || typeof val !== "string") return null;
-  const trimmed = val.trim();
+  if (val === null || val === undefined) return null;
+  const str = String(val).trim();
+  if (!str) return null;
 
   // Match canonical key
-  if (VALID_GRADE_KEYS.includes(trimmed)) return trimmed;
+  if (VALID_GRADE_KEYS.includes(str)) return str;
 
-  // Match Arabic or English names
-  const lower = trimmed.toLowerCase();
+  const lower = str.toLowerCase();
+
+  // Numeric and standard alias matching
+  if (
+    str === "9" ||
+    lower === "grade 9" ||
+    str === "الصف التاسع" ||
+    str.includes("تاسع") ||
+    lower.includes("grade 9")
+  ) {
+    return "GRADE_9";
+  }
+
+  if (
+    str === "10" ||
+    lower === "grade 10" ||
+    str === "العاشر" ||
+    str === "الصف العاشر" ||
+    str.includes("عاشر") ||
+    lower.includes("grade 10")
+  ) {
+    return "GRADE_10";
+  }
+
+  if (
+    str === "GRADE_11_LIT" ||
+    lower === "grade 11 lit" ||
+    lower === "grade 11 arts" ||
+    str.includes("ادبي") ||
+    str.includes("أدبي")
+  ) {
+    return "GRADE_11_LIT";
+  }
+
+  if (
+    str === "GRADE_11_SCI" ||
+    str === "GRADE_11" ||
+    str === "11" ||
+    lower === "grade 11" ||
+    lower.includes("grade 11 science") ||
+    str.includes("علمي") ||
+    str.includes("حادي عشر")
+  ) {
+    return "GRADE_11_SCI";
+  }
+
+  if (
+    str === "TAWJIHI" ||
+    str === "12" ||
+    lower === "tawjihi" ||
+    lower === "grade 12" ||
+    str.includes("توجيهي") ||
+    str.includes("ثانوية")
+  ) {
+    return "TAWJIHI";
+  }
+
+  // Fallback scan across predefined options
   for (const grade of PREDEFINED_GRADES) {
     if (
       grade.key.toLowerCase() === lower ||
       grade.en.toLowerCase() === lower ||
-      grade.ar === trimmed ||
-      trimmed.includes(grade.ar) ||
+      grade.ar === str ||
+      str.includes(grade.ar) ||
       lower.includes(grade.en.toLowerCase())
     ) {
       return grade.key;
@@ -166,28 +223,56 @@ export function validateSecurityNumber(secNum) {
 }
 
 /**
- * Validates multi-select grade levels array
- * @param {Array|string} grades
+ * Validates multi-select grade levels array, string, number, or composite progression (e.g. '9+10', '9 + 10 + 11')
+ * @param {Array|string|number} grades
  * @returns {{ valid: boolean, message?: string, normalized?: string[] }}
  */
 export function validateGradeLevels(grades) {
-  if (!grades) {
+  if (grades === null || grades === undefined || grades === "") {
     return {
       valid: false,
       message: "At least one grade level must be selected (يجب اختيار مرحلة دراسية واحدة على الأقل)",
     };
   }
 
-  // Support single string or array
-  const rawArray = Array.isArray(grades)
-    ? grades
-    : typeof grades === "string"
-    ? grades.startsWith("[")
-      ? JSON.parse(grades)
-      : [grades]
-    : [];
+  // Support array, number, JSON string, or standard string
+  let rawArray = [];
+  if (Array.isArray(grades)) {
+    rawArray = grades;
+  } else if (typeof grades === "number") {
+    rawArray = [String(grades)];
+  } else if (typeof grades === "string") {
+    const trimmed = grades.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        rawArray = JSON.parse(trimmed);
+      } catch {
+        rawArray = [trimmed];
+      }
+    } else {
+      rawArray = [trimmed];
+    }
+  }
 
-  if (rawArray.length === 0) {
+  // Split composite tokens (e.g. "9+10", "9 + 10 + 11", "GRADE_9, GRADE_10")
+  const splitTokens = [];
+  for (const item of rawArray) {
+    if (item === null || item === undefined) continue;
+    const s = String(item).trim();
+    if (s.includes("+")) {
+      s.split("+").forEach((t) => splitTokens.push(t.trim()));
+    } else if (s.includes(";")) {
+      s.split(";").forEach((t) => splitTokens.push(t.trim()));
+    } else if (s.includes(",")) {
+      s.split(",").forEach((t) => splitTokens.push(t.trim()));
+    } else {
+      splitTokens.push(s);
+    }
+  }
+
+  const filteredTokens = splitTokens.filter(Boolean);
+
+  if (filteredTokens.length === 0) {
     return {
       valid: false,
       message: "At least one grade level must be selected (يجب اختيار مرحلة دراسية واحدة على الأقل)",
@@ -195,7 +280,7 @@ export function validateGradeLevels(grades) {
   }
 
   const normalized = [];
-  for (const item of rawArray) {
+  for (const item of filteredTokens) {
     const key = normalizeGradeKey(item);
     if (!key) {
       return {
@@ -209,6 +294,147 @@ export function validateGradeLevels(grades) {
   }
 
   return { valid: true, normalized };
+}
+
+/**
+ * Parses any grade representation (array, JSON, composite string, numeric) into canonical keys
+ */
+export function parseGradeKeys(gradeInput) {
+  if (!gradeInput) return [];
+  const validation = validateGradeLevels(gradeInput);
+  return validation.valid ? validation.normalized : [];
+}
+
+/**
+ * Extracts integer start year from academic year string (e.g., '2019/2020' -> 2019)
+ */
+export function parseAcademicYearStart(yearStr) {
+  if (!yearStr || typeof yearStr !== "string") return null;
+  const match = yearStr.trim().match(/^(\d{4})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Extracts sorted unique numeric grades from array, JSON, or composite string
+ * Returns array of numbers, e.g. [9, 10, 11]
+ */
+export function extractGradeNumbers(gradeInput) {
+  if (!gradeInput) return [];
+
+  let list = [];
+  if (Array.isArray(gradeInput)) {
+    list = gradeInput;
+  } else if (typeof gradeInput === "number") {
+    list = [String(gradeInput)];
+  } else if (typeof gradeInput === "string") {
+    const trimmed = gradeInput.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        list = JSON.parse(trimmed);
+      } catch {
+        list = [trimmed];
+      }
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  const tokens = [];
+  for (const item of list) {
+    if (item === null || item === undefined) continue;
+    const s = String(item).trim();
+    if (s.includes("+")) {
+      s.split("+").forEach((t) => tokens.push(t.trim()));
+    } else if (s.includes(";")) {
+      s.split(";").forEach((t) => tokens.push(t.trim()));
+    } else if (s.includes(",")) {
+      s.split(",").forEach((t) => tokens.push(t.trim()));
+    } else {
+      tokens.push(s);
+    }
+  }
+
+  const matched = new Set();
+  for (const token of tokens) {
+    const key = normalizeGradeKey(token);
+    if (key === "GRADE_9") matched.add(9);
+    else if (key === "GRADE_10") matched.add(10);
+    else if (key === "GRADE_11_SCI" || key === "GRADE_11_LIT") matched.add(11);
+    else if (key === "TAWJIHI") matched.add(12);
+  }
+
+  return Array.from(matched).sort((a, b) => a - b);
+}
+
+/**
+ * Calculates all academic years (formatted as YYYY/YYYY) during which a student
+ * was active or enrolled based on base academic_year and multi-grade progression.
+ */
+export function getRecordActiveYears(record) {
+  if (!record || !record.academic_year) return [];
+  const baseYear = parseAcademicYearStart(record.academic_year);
+  if (!baseYear) return [record.academic_year];
+
+  const grades = extractGradeNumbers(record.grade_level);
+  const yearsSet = new Set();
+
+  // Always include the recorded academic year
+  yearsSet.add(`${baseYear}/${baseYear + 1}`);
+
+  if (grades.length > 1) {
+    const gMin = grades[0];
+    const gMax = grades[grades.length - 1];
+
+    // Completion-anchored progression (recorded year = year of gMax)
+    for (const g of grades) {
+      const y = baseYear - (gMax - g);
+      yearsSet.add(`${y}/${y + 1}`);
+    }
+
+    // Completion-anchored progression (recorded year = year of gMax)
+    for (const g of grades) {
+      const y = baseYear - (gMax - g);
+      yearsSet.add(`${y}/${y + 1}`);
+    }
+  }
+
+  return Array.from(yearsSet);
+}
+
+/**
+ * Checks if a student record was active during a specific target academic year
+ */
+export function isRecordActiveInAcademicYear(record, targetAcademicYear) {
+  if (!targetAcademicYear || targetAcademicYear === "ALL" || targetAcademicYear === "جميع الأعوام الدراسية") {
+    return true;
+  }
+  if (!record || !record.academic_year) return false;
+
+  const targetTrimmed = targetAcademicYear.trim();
+  const recTrimmed = String(record.academic_year).trim();
+
+  // Exact or substring match
+  if (recTrimmed === targetTrimmed || recTrimmed.includes(targetTrimmed) || targetTrimmed.includes(recTrimmed)) {
+    return true;
+  }
+
+  const targetStart = parseAcademicYearStart(targetTrimmed);
+  const recStart = parseAcademicYearStart(recTrimmed);
+  if (!targetStart || !recStart) return false;
+  if (targetStart === recStart) return true;
+
+  const grades = extractGradeNumbers(record.grade_level);
+  if (grades.length === 0) return false;
+
+  const gMax = grades[grades.length - 1];
+
+  // Completion-anchored timeline: recStart is year of gMax
+  for (const g of grades) {
+    const yearForGrade = recStart - (gMax - g);
+    if (yearForGrade === targetStart) return true;
+  }
+
+  return false;
 }
 
 /**

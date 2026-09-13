@@ -26,6 +26,12 @@ import {
   PREDEFINED_GRADES,
   VALID_STATUSES,
   normalizeStatus,
+  normalizeGradeKey,
+  parseGradeKeys,
+  parseAcademicYearStart,
+  extractGradeNumbers,
+  getRecordActiveYears,
+  isRecordActiveInAcademicYear,
   formatGradeForExport,
   formatDateForExport,
 } from "../schemas/validation.js";
@@ -439,6 +445,222 @@ async function runTests() {
   assert(formatGradeLevelDisplay("9+10") === "9+10", "Direct string '9+10' preserved directly");
   assert(formatGradeLevelDisplay("9") === "9", "Direct string '9' preserved directly");
   assert(formatGradeLevelDisplay(null) === "-", "Null grade formats as '-'");
+
+  // 7.9 Smart Academic Year and Grade Progression Filtering
+  console.log("\n[7.9] Testing Smart Academic Year Progression Matching...");
+
+  // parseAcademicYearStart
+  assert(parseAcademicYearStart("2019/2020") === 2019, "parseAcademicYearStart parses '2019/2020' to 2019");
+  assert(parseAcademicYearStart("2021/2022") === 2021, "parseAcademicYearStart parses '2021/2022' to 2021");
+  assert(parseAcademicYearStart("2025") === 2025, "parseAcademicYearStart parses '2025' to 2025");
+
+  // extractGradeNumbers
+  assert(
+    JSON.stringify(extractGradeNumbers(["GRADE_9", "GRADE_10", "GRADE_11_SCI"])) === JSON.stringify([9, 10, 11]),
+    "extractGradeNumbers parses canonical array to [9, 10, 11]"
+  );
+  assert(
+    JSON.stringify(extractGradeNumbers("9 + 10 + 11")) === JSON.stringify([9, 10, 11]),
+    "extractGradeNumbers parses '9 + 10 + 11' to [9, 10, 11]"
+  );
+  assert(
+    JSON.stringify(extractGradeNumbers("9+10")) === JSON.stringify([9, 10]),
+    "extractGradeNumbers parses '9+10' to [9, 10]"
+  );
+
+  // Multi-grade student graduating in 2021/2022 with grades 9 + 10 + 11
+  const studentMultiGrade = {
+    academic_year: "2021/2022",
+    grade_level: ["GRADE_9", "GRADE_10", "GRADE_11_SCI"],
+  };
+
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "2021/2022") === true,
+    "Student is active in completion year 2021/2022"
+  );
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "2020/2021") === true,
+    "Student with 9+10+11 in 2021/2022 is active in Grade 10 year 2020/2021"
+  );
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "2019/2020") === true,
+    "Student with 9+10+11 in 2021/2022 is intelligently matched when filtering by 2019/2020 (Grade 9)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "2018/2019") === false,
+    "Student is not matched in earlier year 2018/2019 before Grade 9"
+  );
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "2022/2023") === false,
+    "Student is not matched in later year 2022/2023 after Grade 11"
+  );
+
+  // String composite grade matching (e.g. "9 + 10 + 11")
+  const studentStringGrades = {
+    academic_year: "2021/2022",
+    grade_level: "9 + 10 + 11",
+  };
+  assert(
+    isRecordActiveInAcademicYear(studentStringGrades, "2019/2020") === true,
+    "Record with string grade '9 + 10 + 11' in 2021/2022 matches filter 2019/2020"
+  );
+
+  // Multi-grade student with 10 + 11 (did NOT take 9 in this timeline)
+  const student10and11 = {
+    academic_year: "2021/2022",
+    grade_level: ["GRADE_10", "GRADE_11_SCI"],
+  };
+  assert(
+    isRecordActiveInAcademicYear(student10and11, "2020/2021") === true,
+    "Student with 10+11 in 2021/2022 matches 2020/2021 (Grade 10)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student10and11, "2019/2020") === false,
+    "Student with 10+11 in 2021/2022 does NOT match 2019/2020"
+  );
+
+  // 4-year progression student (Grades 9 + 10 + 11 + Tawjihi in 2024/2025)
+  const student4Grades = {
+    academic_year: "2024/2025",
+    grade_level: ["GRADE_9", "GRADE_10", "GRADE_11_SCI", "TAWJIHI"],
+  };
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2024/2025") === true,
+    "4-grade student matches completion year 2024/2025 (Tawjihi)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2023/2024") === true,
+    "4-grade student matches 2023/2024 (Grade 11)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2022/2023") === true,
+    "4-grade student matches 2022/2023 (Grade 10)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2021/2022") === true,
+    "4-grade student matches 2021/2022 (Grade 9)"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2020/2021") === false,
+    "4-grade student does not match 2020/2021"
+  );
+  assert(
+    isRecordActiveInAcademicYear(student4Grades, "2025/2026") === false,
+    "4-grade student does not match 2025/2026"
+  );
+
+  // Single grade record only matches exact academic year
+  const singleGradeStudent = {
+    academic_year: "2021/2022",
+    grade_level: ["GRADE_10"],
+  };
+  assert(
+    isRecordActiveInAcademicYear(singleGradeStudent, "2021/2022") === true,
+    "Single grade student matches exact year 2021/2022"
+  );
+  assert(
+    isRecordActiveInAcademicYear(singleGradeStudent, "2019/2020") === false,
+    "Single grade student in 2021/2022 does not match 2019/2020"
+  );
+
+  // Filter 'ALL' or 'جميع الأعوام الدراسية' matches all
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "ALL") === true,
+    "Filter 'ALL' matches record"
+  );
+  assert(
+    isRecordActiveInAcademicYear(studentMultiGrade, "جميع الأعوام الدراسية") === true,
+    "Filter 'جميع الأعوام الدراسية' matches record"
+  );
+
+  // 7.10 Numeric and Composite Grade Level Validation & Edit Pre-Filling
+  console.log("\n[7.10] Testing Numeric & Composite Grade Validation & Pre-Filling...");
+
+  // Single numeric strings
+  const valG9 = validateGradeLevels("9");
+  assert(valG9.valid === true && valG9.normalized[0] === "GRADE_9", "Numeric string '9' normalizes to 'GRADE_9'");
+
+  const valG10 = validateGradeLevels("10");
+  assert(valG10.valid === true && valG10.normalized[0] === "GRADE_10", "Numeric string '10' normalizes to 'GRADE_10'");
+
+  const valG11 = validateGradeLevels("11");
+  assert(valG11.valid === true && valG11.normalized[0] === "GRADE_11_SCI", "Numeric string '11' normalizes to 'GRADE_11_SCI'");
+
+  const valG12 = validateGradeLevels("12");
+  assert(valG12.valid === true && valG12.normalized[0] === "TAWJIHI", "Numeric string '12' normalizes to 'TAWJIHI'");
+
+  // Number types
+  const valNum10 = validateGradeLevels(10);
+  assert(valNum10.valid === true && valNum10.normalized[0] === "GRADE_10", "Numeric number 10 normalizes to 'GRADE_10'");
+
+  // Composite strings with plus '+'
+  const valCompositePlus = validateGradeLevels("9+10");
+  assert(
+    valCompositePlus.valid === true &&
+    valCompositePlus.normalized.length === 2 &&
+    valCompositePlus.normalized.includes("GRADE_9") &&
+    valCompositePlus.normalized.includes("GRADE_10"),
+    "Composite string '9+10' normalizes without error"
+  );
+
+  const valMultiProgression = validateGradeLevels("9 + 10 + 11");
+  assert(
+    valMultiProgression.valid === true &&
+    valMultiProgression.normalized.length === 3 &&
+    valMultiProgression.normalized.includes("GRADE_9") &&
+    valMultiProgression.normalized.includes("GRADE_10") &&
+    valMultiProgression.normalized.includes("GRADE_11_SCI"),
+    "Progression string '9 + 10 + 11' normalizes to canonical keys"
+  );
+
+  // Array of numeric strings
+  const valArrayNumerics = validateGradeLevels(["10", "11"]);
+  assert(
+    valArrayNumerics.valid === true &&
+    valArrayNumerics.normalized.includes("GRADE_10") &&
+    valArrayNumerics.normalized.includes("GRADE_11_SCI"),
+    "Array of numeric strings ['10', '11'] normalizes without error"
+  );
+
+  // Array of numbers
+  const valArrayNums = validateGradeLevels([9, 10]);
+  assert(
+    valArrayNums.valid === true &&
+    valArrayNums.normalized.includes("GRADE_9") &&
+    valArrayNums.normalized.includes("GRADE_10"),
+    "Array of numbers [9, 10] normalizes without error"
+  );
+
+  // parseGradeKeys helper for Edit Modal Pre-filling
+  assert(
+    JSON.stringify(parseGradeKeys("9")) === JSON.stringify(["GRADE_9"]),
+    "parseGradeKeys('9') returns ['GRADE_9'] for edit modal pre-fill"
+  );
+  assert(
+    JSON.stringify(parseGradeKeys("9+10")) === JSON.stringify(["GRADE_9", "GRADE_10"]),
+    "parseGradeKeys('9+10') returns ['GRADE_9', 'GRADE_10'] for edit modal pre-fill"
+  );
+  assert(
+    JSON.stringify(parseGradeKeys("9 + 10 + 11")) === JSON.stringify(["GRADE_9", "GRADE_10", "GRADE_11_SCI"]),
+    "parseGradeKeys('9 + 10 + 11') returns ['GRADE_9', 'GRADE_10', 'GRADE_11_SCI'] for edit modal pre-fill"
+  );
+  assert(
+    JSON.stringify(parseGradeKeys(["GRADE_10", "TAWJIHI"])) === JSON.stringify(["GRADE_10", "TAWJIHI"]),
+    "parseGradeKeys preserves canonical keys array"
+  );
+
+  // validateCertificateRequest accepts numeric & composite grades
+  const certReqWithNumericGrade = validateCertificateRequest({
+    student_name: "عمر زياد مصطفى",
+    grade_level: "9+10",
+    academic_year: "2024/2025",
+  });
+  assert(certReqWithNumericGrade.isValid === true, "validateCertificateRequest accepts composite grade '9+10'");
+  assert(
+    certReqWithNumericGrade.sanitizedData.grade_level.length === 2 &&
+    certReqWithNumericGrade.sanitizedData.grade_level.includes("GRADE_9"),
+    "Composite grade correctly sanitized into canonical keys"
+  );
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
