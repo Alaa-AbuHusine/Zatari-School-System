@@ -357,6 +357,27 @@ async function runTests() {
   assert(shouldExcludeStatus("انتظار", "انتظار") === false, "Draft status 'انتظار' is NOT excluded when explicitly filtered");
   assert(shouldExcludeStatus("تمت كتابة الشهادة", "تمت كتابة الشهادة") === false, "Draft status 'تمت كتابة الشهادة' is NOT excluded when explicitly filtered");
 
+  // 7.7 Dynamic Page Size & Show All Selector Logic
+  console.log("\n[7.7] Testing Dynamic Page Size & Show All Selector Logic...");
+  function parsePageLimit(limitInput) {
+    const isAll = String(limitInput).trim().toUpperCase() === "ALL";
+    const parsed = isAll ? 50000 : (parseInt(limitInput, 10) || 10);
+    return Math.min(50000, Math.max(1, parsed));
+  }
+
+  assert(parsePageLimit("10") === 10, "Page size 10 parses as 10");
+  assert(parsePageLimit("25") === 25, "Page size 25 parses as 25");
+  assert(parsePageLimit("50") === 50, "Page size 50 parses as 50");
+  assert(parsePageLimit("100") === 100, "Page size 100 parses as 100");
+  assert(parsePageLimit("ALL") === 50000, "Page size 'ALL' parses to high limit 50000");
+  assert(parsePageLimit("all") === 50000, "Page size 'all' (lowercase) parses to high limit 50000");
+
+  function isShowAllMode(pageSize, limit) {
+    return pageSize === "ALL" || limit >= 50000;
+  }
+  assert(isShowAllMode("ALL", 50000) === true, "'ALL' triggers Show All mode (hiding navigation buttons)");
+  assert(isShowAllMode("10", 10) === false, "'10' maintains normal paginated mode");
+
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
   let dbReachable = false;

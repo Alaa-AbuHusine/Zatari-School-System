@@ -86,8 +86,11 @@ const i18n = {
 
     // Pagination
     showingInfo: "Showing {start} to {end} of {total} records",
+    showingAllInfo: "Showing all {total} records",
     btnPrev: "Previous",
     btnNext: "Next",
+    lblPageSize: "Rows per page:",
+    optAllRows: "All",
 
     // Form Modal (No School Name)
     modalTitle: "New Certificate Attestation Request",
@@ -221,8 +224,11 @@ const i18n = {
 
     // Pagination
     showingInfo: "عرض {start} إلى {end} من أصل {total} سجل",
+    showingAllInfo: "عرض جميع السجلات ({total} سجل)",
     btnPrev: "السابق",
     btnNext: "التالي",
+    lblPageSize: "عدد الصفوف:",
+    optAllRows: "الكل",
 
     // Form Modal (No School Name)
     modalTitle: "إدخال طلب تصديق شهادة دراسية جديد",
@@ -281,6 +287,12 @@ const i18n = {
   },
 };
 
+// Load persisted page size preference (defaults to "10")
+const savedPageSize =
+  sessionStorage.getItem("student_gateway_page_size") ||
+  localStorage.getItem("student_gateway_page_size") ||
+  "10";
+
 // ==========================================
 // Application State
 // ==========================================
@@ -291,7 +303,8 @@ const state = {
   academic_year: "ALL",
   grade: "ALL",
   page: 1,
-  limit: 8,
+  pageSize: savedPageSize,
+  limit: savedPageSize === "ALL" ? 50000 : (parseInt(savedPageSize, 10) || 10),
   totalPages: 1,
   totalRecords: 0,
   records: [],
@@ -330,12 +343,14 @@ const DOM = {
   gradeFilter: document.getElementById("gradeFilter"),
   yearFilter: document.getElementById("yearFilter"),
 
-  // Table
+  // Table & Pagination
   tableBody: document.getElementById("tableBody"),
   paginationInfo: document.getElementById("paginationInfo"),
   pageNumbers: document.getElementById("pageNumbers"),
   btnPrevPage: document.getElementById("btnPrevPage"),
   btnNextPage: document.getElementById("btnNextPage"),
+  pageSizeSelect: document.getElementById("pageSizeSelect"),
+  paginationButtons: document.getElementById("paginationButtons"),
 
   // Modals
   requestModal: document.getElementById("requestModal"),
@@ -557,6 +572,20 @@ function bindEventListeners() {
       loadCertificates();
     }
   });
+
+  // Page Size Selector with session persistence
+  if (DOM.pageSizeSelect) {
+    DOM.pageSizeSelect.value = state.pageSize;
+    DOM.pageSizeSelect.addEventListener("change", (e) => {
+      const selectedSize = e.target.value;
+      state.pageSize = selectedSize;
+      state.limit = selectedSize === "ALL" ? 50000 : (parseInt(selectedSize, 10) || 10);
+      sessionStorage.setItem("student_gateway_page_size", selectedSize);
+      localStorage.setItem("student_gateway_page_size", selectedSize);
+      state.page = 1;
+      loadCertificates();
+    });
+  }
 
   // Open & Close Form Modal
   DOM.btnOpenModal.addEventListener("click", openRequestModal);
@@ -1158,6 +1187,22 @@ function renderTable(records) {
  */
 function renderPagination(pagination) {
   const { page, limit, total, totalPages } = pagination;
+  const isShowAll = state.pageSize === "ALL" || limit >= 50000;
+
+  if (isShowAll) {
+    // When "All" is selected, hide the page navigation buttons completely
+    if (DOM.paginationButtons) {
+      DOM.paginationButtons.style.display = "none";
+    }
+    DOM.paginationInfo.textContent = t("showingAllInfo", { total });
+    return;
+  }
+
+  // Restore navigation buttons in standard pagination mode
+  if (DOM.paginationButtons) {
+    DOM.paginationButtons.style.display = "flex";
+  }
+
   const start = total === 0 ? 0 : (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
@@ -1166,7 +1211,14 @@ function renderPagination(pagination) {
   DOM.btnNextPage.disabled = page >= totalPages;
 
   let pageBtnsHtml = "";
-  for (let i = 1; i <= totalPages; i++) {
+  const maxButtons = 5;
+  let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage < maxButtons - 1) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
     pageBtnsHtml += `
       <button class="page-num ${i === page ? "active" : ""}" onclick="goToPage(${i})">
         ${i}

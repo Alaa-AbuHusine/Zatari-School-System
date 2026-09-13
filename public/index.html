@@ -25,7 +25,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=1789338476769" />
+  <link rel="stylesheet" href="styles.css?v=1789340353229" />
 </head>
 <body>
   <!-- App Container -->
@@ -243,20 +243,36 @@
           <div class="pagination-info" id="paginationInfo">
             عرض 0 إلى 0 من أصل 0 سجل
           </div>
-          <div class="pagination-buttons">
-            <button id="btnPrevPage" class="btn-page" disabled>
-              <svg class="icon-prev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span data-i18n="btnPrev">السابق</span>
-            </button>
-            <div id="pageNumbers" class="page-numbers"></div>
-            <button id="btnNextPage" class="btn-page" disabled>
-              <span data-i18n="btnNext">التالي</span>
-              <svg class="icon-next" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+
+          <div class="pagination-controls-group">
+            <!-- Page Size Dropdown -->
+            <div class="page-size-wrap">
+              <label for="pageSizeSelect" class="page-size-label" data-i18n="lblPageSize">عدد الصفوف:</label>
+              <select id="pageSizeSelect" class="select-page-size" aria-label="Page Size">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="ALL" data-i18n="optAllRows">الكل</option>
+              </select>
+            </div>
+
+            <!-- Pagination Navigation Buttons -->
+            <div class="pagination-buttons" id="paginationButtons">
+              <button id="btnPrevPage" class="btn-page" disabled>
+                <svg class="icon-prev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span data-i18n="btnPrev">السابق</span>
+              </button>
+              <div id="pageNumbers" class="page-numbers"></div>
+              <button id="btnNextPage" class="btn-page" disabled>
+                <span data-i18n="btnNext">التالي</span>
+                <svg class="icon-next" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -464,6 +480,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=1789338476769"></script>
+  <script src="app.js?v=1789340353229"></script>
 </body>
 </html>

@@ -273,7 +273,9 @@ export async function getCertificates({
   limit = 10,
 } = {}) {
   const p = Math.max(1, parseInt(page, 10) || 1);
-  const l = Math.min(50000, Math.max(1, parseInt(limit, 10) || 10));
+  const isAll = String(limit).trim().toUpperCase() === "ALL";
+  const parsedLimit = isAll ? 50000 : (parseInt(limit, 10) || 10);
+  const l = Math.min(50000, Math.max(1, parsedLimit));
   const offset = (p - 1) * l;
 
   let whereClauses = [];

@@ -587,12 +587,16 @@ html[dir="rtl"] .icon-next {
 /* ================= Data Table (Optimized Layout) ================= */
 .table-responsive {
   width: 100%;
-  overflow-x: hidden; /* Eliminates horizontal scroll on standard desktop and tablet screens */
+  max-height: calc(100vh - 320px);
+  min-height: 220px;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 @media (max-width: 768px) {
   .table-responsive {
-    overflow-x: auto; /* Fallback for very narrow mobile screens */
+    max-height: calc(100vh - 280px);
+    overflow-x: auto;
   }
 }
 
@@ -615,6 +619,9 @@ html[dir="rtl"] .icon-next {
 .col-actions        { width: 12%; }
 
 .data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   background-color: #f8fafc;
   padding: 11px 12px;
   font-size: 0.72rem;
@@ -623,6 +630,7 @@ html[dir="rtl"] .icon-next {
   letter-spacing: 0.04em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--border);
   white-space: normal;
   line-height: 1.3;
 }
@@ -1002,7 +1010,51 @@ html[dir="rtl"] .section-tag {
   font-size: 0.8rem;
   color: var(--text-muted);
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+}
+
+.pagination-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-size-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.page-size-label {
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.select-page-size {
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: white;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.select-page-size:hover {
+  border-color: #cbd5e1;
+}
+
+.select-page-size:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
 .pagination-buttons {
