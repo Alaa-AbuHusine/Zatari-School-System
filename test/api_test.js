@@ -378,6 +378,68 @@ async function runTests() {
   assert(isShowAllMode("ALL", 50000) === true, "'ALL' triggers Show All mode (hiding navigation buttons)");
   assert(isShowAllMode("10", 10) === false, "'10' maintains normal paginated mode");
 
+  // 7.8 Unified Grade Level Display Formatting
+  console.log("\n[7.8] Testing Unified Single Grade Level Badge Formatting...");
+  function formatGradeLevelDisplay(gradeInput) {
+    if (!gradeInput) return "-";
+    if (typeof gradeInput === "string") {
+      const trimmed = gradeInput.trim();
+      if (
+        !trimmed.startsWith("[") &&
+        !trimmed.includes("GRADE_") &&
+        !trimmed.includes("الصف") &&
+        !trimmed.includes("العاشر") &&
+        !trimmed.includes("حادي") &&
+        !trimmed.includes("توجيهي")
+      ) {
+        return trimmed;
+      }
+    }
+    let list = [];
+    if (Array.isArray(gradeInput)) {
+      list = gradeInput;
+    } else if (typeof gradeInput === "string") {
+      const trimmed = gradeInput.trim();
+      if (trimmed.startsWith("[")) {
+        try { list = JSON.parse(trimmed); } catch { list = [trimmed]; }
+      } else if (trimmed.includes("+")) {
+        return trimmed;
+      } else {
+        list = [trimmed];
+      }
+    }
+    const GRADE_NUM_MAP = {
+      GRADE_9: "9",
+      GRADE_10: "10",
+      GRADE_11_SCI: "11",
+      GRADE_11_LIT: "11",
+      TAWJIHI: "12",
+      "الصف التاسع": "9",
+      "العاشر": "10",
+      "الحادي عشر علمي": "11",
+      "الحادي عشر ادبي": "11",
+      "التوجيهي": "12",
+    };
+    const numOrder = ["9", "10", "11", "12"];
+    const matched = new Set();
+    for (const item of list) {
+      if (!item) continue;
+      const str = String(item).trim();
+      if (GRADE_NUM_MAP[str]) matched.add(GRADE_NUM_MAP[str]);
+      else matched.add(str);
+    }
+    const sorted = numOrder.filter((n) => matched.has(n));
+    return sorted.length > 0 ? sorted.join(" + ") : String(gradeInput);
+  }
+
+  assert(formatGradeLevelDisplay(["GRADE_9"]) === "9", "['GRADE_9'] formats as clean unified '9'");
+  assert(formatGradeLevelDisplay(["GRADE_10"]) === "10", "['GRADE_10'] formats as clean unified '10'");
+  assert(formatGradeLevelDisplay(["GRADE_9", "GRADE_10"]) === "9 + 10", "Multi-grade formats as unified '9 + 10'");
+  assert(formatGradeLevelDisplay(["GRADE_10", "GRADE_11_SCI"]) === "10 + 11", "Grade 10 + 11 formats as unified '10 + 11'");
+  assert(formatGradeLevelDisplay("9+10") === "9+10", "Direct string '9+10' preserved directly");
+  assert(formatGradeLevelDisplay("9") === "9", "Direct string '9' preserved directly");
+  assert(formatGradeLevelDisplay(null) === "-", "Null grade formats as '-'");
+
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
   let dbReachable = false;

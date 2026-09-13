@@ -1044,7 +1044,100 @@ async function deleteRecord(id, studentName) {
 // ==========================================
 
 /**
- * Render table rows with word wrapping, localized badges, and multi-select grade tags
+ * Formats grade_level directly as a clean, unified single badge representation (e.g., 9, 10, or 9 + 10)
+ * rather than splitting into multiple complex stacked text badges.
+ */
+function formatGradeLevelDisplay(gradeInput) {
+  if (!gradeInput) return "-";
+
+  if (typeof gradeInput === "string") {
+    const trimmed = gradeInput.trim();
+    if (
+      !trimmed.startsWith("[") &&
+      !trimmed.includes("GRADE_") &&
+      !trimmed.includes("الصف") &&
+      !trimmed.includes("العاشر") &&
+      !trimmed.includes("حادي") &&
+      !trimmed.includes("توجيهي")
+    ) {
+      return trimmed;
+    }
+  }
+
+  let list = [];
+  if (Array.isArray(gradeInput)) {
+    list = gradeInput;
+  } else if (typeof gradeInput === "string") {
+    const trimmed = gradeInput.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        list = JSON.parse(trimmed);
+      } catch {
+        list = [trimmed];
+      }
+    } else if (trimmed.includes("+")) {
+      return trimmed;
+    } else if (trimmed.includes(";")) {
+      list = trimmed.split(";");
+    } else if (trimmed.includes(",")) {
+      list = trimmed.split(",");
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  const GRADE_NUM_MAP = {
+    GRADE_9: "9",
+    GRADE_10: "10",
+    GRADE_11_SCI: "11",
+    GRADE_11_LIT: "11",
+    TAWJIHI: "12",
+    "الصف التاسع": "9",
+    "العاشر": "10",
+    "الحادي عشر علمي": "11",
+    "الحادي عشر ادبي": "11",
+    "التوجيهي": "12",
+  };
+
+  const numOrder = ["9", "10", "11", "12"];
+  const matched = new Set();
+
+  for (const item of list) {
+    if (!item) continue;
+    const str = String(item).trim();
+    if (GRADE_NUM_MAP[str]) {
+      matched.add(GRADE_NUM_MAP[str]);
+    } else if (str === "9" || str.includes("تاسع")) {
+      matched.add("9");
+    } else if (str === "10" || str.includes("عاشر")) {
+      matched.add("10");
+    } else if (
+      str === "11" ||
+      str.includes("حادي عشر") ||
+      str.includes("علمي") ||
+      str.includes("ادبي") ||
+      str.includes("أدبي")
+    ) {
+      matched.add("11");
+    } else if (str === "12" || str.includes("توجيهي")) {
+      matched.add("12");
+    } else {
+      matched.add(str);
+    }
+  }
+
+  const sorted = numOrder.filter((n) => matched.has(n));
+  for (const val of matched) {
+    if (!numOrder.includes(val) && !sorted.includes(val)) {
+      sorted.push(val);
+    }
+  }
+
+  return sorted.length > 0 ? sorted.join(" + ") : String(gradeInput);
+}
+
+/**
+ * Render table rows with word wrapping, localized badges, and clean unified grade badges
  */
 function renderTable(records) {
   if (!records || records.length === 0) {
@@ -1085,22 +1178,8 @@ function renderTable(records) {
         statusLabel = t("statusWaiting");
       }
 
-      // Render multiple grade badges
-      const gradesArray = Array.isArray(item.grade_level)
-        ? item.grade_level
-        : [item.grade_level];
-
-      const gradeTagsHtml = gradesArray
-        .map((gradeKey) => {
-          const meta = GRADE_MAP[gradeKey] || {
-            en: gradeKey,
-            ar: gradeKey,
-            cls: "grade-tag-9",
-          };
-          const label = state.lang === "ar" ? meta.ar : meta.en;
-          return `<span class="grade-tag ${meta.cls}">${escapeHtml(label)}</span>`;
-        })
-        .join("");
+      // Render clean, unified single grade badge (e.g., 9, 10, or 9 + 10)
+      const displayGrade = formatGradeLevelDisplay(item.grade_level);
 
       const sectionHtml = item.section
         ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
@@ -1123,9 +1202,9 @@ function renderTable(records) {
         <tr>
           <td>${secNumHtml}</td>
           <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
-          <td>
-            <div class="grade-tags-wrap">
-              ${gradeTagsHtml}
+          <td style="text-align: center;">
+            <div class="grade-cell-wrap">
+              <span class="grade-badge-unified">${escapeHtml(displayGrade)}</span>
               ${sectionHtml}
             </div>
           </td>
