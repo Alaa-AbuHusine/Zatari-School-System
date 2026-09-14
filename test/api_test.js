@@ -29,6 +29,7 @@ import {
   normalizeGradeKey,
   parseGradeKeys,
   parseAcademicYearStart,
+  sortAcademicYears,
   extractGradeNumbers,
   getRecordActiveYears,
   isRecordActiveInAcademicYear,
@@ -571,6 +572,25 @@ async function runTests() {
   assert(
     isRecordActiveInAcademicYear(studentMultiGrade, "جميع الأعوام الدراسية") === true,
     "Filter 'جميع الأعوام الدراسية' matches record"
+  );
+
+  // Chronological sorting of academic years (descending newest to oldest)
+  const scrambledYears = ["2018/2019", "2026/2027", "2012/2013", "2024/2025", "2020/2021", "2015/2016"];
+  const sorted = sortAcademicYears(scrambledYears);
+  assert(
+    JSON.stringify(sorted) ===
+      JSON.stringify(["2026/2027", "2024/2025", "2020/2021", "2018/2019", "2015/2016", "2012/2013"]),
+    "sortAcademicYears sorts scrambled years chronologically in descending order (2026/2027 down to 2012/2013)"
+  );
+  assert(
+    sorted[0] === "2026/2027" && sorted[sorted.length - 1] === "2012/2013",
+    "Newest year is placed first and oldest year is placed last"
+  );
+  const duplicatesWithBlanks = ["2024/2025", "2024/2025", "", null, "2021/2022"];
+  const deduplicatedSorted = sortAcademicYears(duplicatesWithBlanks);
+  assert(
+    JSON.stringify(deduplicatedSorted) === JSON.stringify(["2024/2025", "2021/2022"]),
+    "sortAcademicYears deduplicates duplicate years and filters out blank values"
   );
 
   // 7.10 Numeric and Composite Grade Level Validation & Edit Pre-Filling

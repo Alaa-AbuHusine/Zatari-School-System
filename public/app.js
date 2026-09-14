@@ -987,23 +987,103 @@ function isRecordActiveInAcademicYear(record, targetAcademicYear) {
   return false;
 }
 
+function sortAcademicYears(yearsArray) {
+  if (!Array.isArray(yearsArray)) return [];
+  const unique = Array.from(
+    new Set(
+      yearsArray
+        .filter((y) => y !== null && y !== undefined)
+        .map((y) => String(y).trim())
+        .filter((y) => Boolean(y) && y !== "null" && y !== "undefined")
+    )
+  );
+  return unique.sort((a, b) => {
+    const startA = parseAcademicYearStart(a) || 0;
+    const startB = parseAcademicYearStart(b) || 0;
+    return startB - startA;
+  });
+}
+
+/**
+ * Synchronizes and chronologically sorts Academic Year dropdown options in descending order (newest to oldest).
+ * Prevents scrambled ordering, ensures clean layout, and preserves current user selection.
+ */
 function syncYearFilterOptions(records) {
-  if (!DOM.yearFilter || !Array.isArray(records)) return;
-  const existingOptions = new Set(Array.from(DOM.yearFilter.options).map((o) => o.value));
-  for (const r of records) {
-    if (r.academic_year && /^\d{4}\/\d{4}$/.test(r.academic_year.trim())) {
-      const yr = r.academic_year.trim();
-      if (!existingOptions.has(yr)) {
-        const opt = document.createElement("option");
-        opt.value = yr;
-        opt.textContent = yr;
-        DOM.yearFilter.appendChild(opt);
-        existingOptions.add(yr);
+  if (!DOM.yearFilter) return;
+
+  const currentVal = DOM.yearFilter.value || state.academic_year || "ALL";
+
+  // Standard baseline academic years (from upcoming 2026/2027 down to 2018/2019)
+  const baselineYears = [
+    "2026/2027",
+    "2025/2026",
+    "2024/2025",
+    "2023/2024",
+    "2022/2023",
+    "2021/2022",
+    "2020/2021",
+    "2019/2020",
+    "2018/2019",
+  ];
+
+  const yearsSet = new Set(baselineYears);
+
+  // Collect from existing dropdown options (excluding "ALL")
+  Array.from(DOM.yearFilter.options).forEach((opt) => {
+    const val = opt.value?.trim();
+    if (val && val !== "ALL" && /^\d{4}\/\d{4}$/.test(val)) {
+      yearsSet.add(val);
+    }
+  });
+
+  // Extract valid academic years from loaded student records
+  if (Array.isArray(records)) {
+    for (const r of records) {
+      if (r && r.academic_year) {
+        const val = String(r.academic_year).trim();
+        if (/^\d{4}\/\d{4}$/.test(val)) {
+          yearsSet.add(val);
+        } else {
+          const match = val.match(/^(\d{4})[/-](\d{4})$/);
+          if (match) {
+            yearsSet.add(`${match[1]}/${match[2]}`);
+          }
+        }
       }
     }
   }
+
+  // Chronological sort: strictly descending order (newest first down to oldest)
+  const sortedYears = sortAcademicYears(Array.from(yearsSet));
+
+  // Rebuild dropdown cleanly
+  DOM.yearFilter.innerHTML = "";
+
+  // 1. "All Academic Years" default option
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "ALL";
+  defaultOption.setAttribute("data-i18n", "filterAllYears");
+  defaultOption.textContent = t("filterAllYears");
+  DOM.yearFilter.appendChild(defaultOption);
+
+  // 2. Sorted chronological options
+  sortedYears.forEach((yr) => {
+    const opt = document.createElement("option");
+    opt.value = yr;
+    opt.textContent = yr;
+    DOM.yearFilter.appendChild(opt);
+  });
+
+  // 3. Restore previously selected value
+  if (yearsSet.has(currentVal) || currentVal === "ALL") {
+    DOM.yearFilter.value = currentVal;
+  } else {
+    DOM.yearFilter.value = "ALL";
+  }
 }
 
+window.sortAcademicYears = sortAcademicYears;
+window.syncYearFilterOptions = syncYearFilterOptions;
 window.parseGradeKeys = parseGradeKeys;
 window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
 window.extractGradeNumbers = extractGradeNumbers;

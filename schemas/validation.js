@@ -315,6 +315,26 @@ export function parseAcademicYearStart(yearStr) {
 }
 
 /**
+ * Chronologically sorts an array of academic year strings (e.g. YYYY/YYYY) in descending order (newest first).
+ */
+export function sortAcademicYears(yearsArray) {
+  if (!Array.isArray(yearsArray)) return [];
+  const unique = Array.from(
+    new Set(
+      yearsArray
+        .filter((y) => y !== null && y !== undefined)
+        .map((y) => String(y).trim())
+        .filter((y) => Boolean(y) && y !== "null" && y !== "undefined")
+    )
+  );
+  return unique.sort((a, b) => {
+    const startA = parseAcademicYearStart(a) || 0;
+    const startB = parseAcademicYearStart(b) || 0;
+    return startB - startA;
+  });
+}
+
+/**
  * Extracts sorted unique numeric grades from array, JSON, or composite string
  * Returns array of numbers, e.g. [9, 10, 11]
  */
