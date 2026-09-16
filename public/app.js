@@ -81,7 +81,8 @@ const i18n = {
     tooltipEdit: "Edit Attestation Record",
     tooltipMarkWaiting: "Set Status: Waiting (انتظار)",
     tooltipMarkWritten: "Set Status: Certificate Written (تمت كتابة الشهادة)",
-    tooltipMarkSubmitted: "Set Status: Submitted for Attestation (تم الرفع للتصديق)",
+    tooltipMarkSubmitted:
+      "Set Status: Submitted for Attestation (تم الرفع للتصديق)",
     tooltipDelete: "Delete Record",
     tooltipCopy: "Copy Security Number",
     copied: "Copied to clipboard!",
@@ -100,7 +101,8 @@ const i18n = {
     modalSubtitle: "Zaatari Camp Second Basic School for Boys",
     lblStudentName: "Student Full Name (3-part name)",
     placeholderStudentName: "e.g. أحمد محمد عبد الله",
-    hintStudentName: "Must contain at least 3 parts: First, Father, Family name (يجب أن يتضمن الاسم 3 مقاطع على الأقل)",
+    hintStudentName:
+      "Must contain at least 3 parts: First, Father, Family name (يجب أن يتضمن الاسم 3 مقاطع على الأقل)",
     wordCountText: "Words: {count}/3",
     lblGradeLevel: "Grade Levels",
     lblSection: "Section (Optional)",
@@ -118,7 +120,8 @@ const i18n = {
     lblRequestDate: "Request Date",
     lblStatus: "Initial Status",
     lblNotes: "Administrative Notes",
-    placeholderNotes: "Optional internal attestation notes or document references...",
+    placeholderNotes:
+      "Optional internal attestation notes or document references...",
     btnCancel: "Cancel",
     btnSaveRecord: "Save Attestation Record",
     btnUpdateRecord: "Update Attestation Record",
@@ -141,15 +144,19 @@ const i18n = {
     btnPrintSlip: "Print Attestation Slip",
 
     // Notifications & Messages
-    errName3Parts: "Student name must contain at least 3 parts (الاسم الثلاثي). Currently entered: {count} word(s).",
-    errGradeReq: "At least one grade level must be selected (يجب اختيار مرحلة دراسية واحدة على الأقل)",
-    errYearFormat: "Academic year must be formatted as YYYY/YYYY (e.g. 2025/2026)",
+    errName3Parts:
+      "Student name must contain at least 3 parts (الاسم الثلاثي). Currently entered: {count} word(s).",
+    errGradeReq:
+      "At least one grade level must be selected (يجب اختيار مرحلة دراسية واحدة على الأقل)",
+    errYearFormat:
+      "Academic year must be formatted as YYYY/YYYY (e.g. 2025/2026)",
     msgCreated: "Certificate attestation request recorded successfully!",
     msgUpdated: "Certificate attestation request updated successfully!",
     msgStatusUpdated: "Attestation status updated to {status}",
     msgDeleted: "Attestation record deleted successfully",
     confirmDelete: "Are you sure you want to delete this attestation record?",
-    confirmDeleteNamed: "Are you sure you want to permanently delete the attestation record for '{name}'? This action cannot be undone.",
+    confirmDeleteNamed:
+      "Are you sure you want to permanently delete the attestation record for '{name}'? This action cannot be undone.",
     exportDownloading: "Downloading CSV export...",
   },
 
@@ -243,7 +250,8 @@ const i18n = {
     modalSubtitle: "مدرسة مخيم الزعتري الأساسية الثانية للبنين",
     lblStudentName: "اسم الطالب (ثلاثي على الأقل)",
     placeholderStudentName: "مثال: أحمد محمد عبد الله",
-    hintStudentName: "يجب أن يتضمن الاسم 3 مقاطع على الأقل: الاسم الأول، اسم الأب، اسم العائلة",
+    hintStudentName:
+      "يجب أن يتضمن الاسم 3 مقاطع على الأقل: الاسم الأول، اسم الأب، اسم العائلة",
     wordCountText: "الكلمات: {count}/3",
     lblGradeLevel: "المراحل الدراسية",
     lblSection: "الشعبة (اختياري)",
@@ -284,15 +292,18 @@ const i18n = {
     btnPrintSlip: "طباعة كشف التصديق",
 
     // Notifications & Messages
-    errName3Parts: "يجب أن يتضمن اسم الطالب 3 مقاطع على الأقل (الاسم الثلاثي). تم إدخال: {count} كلمة.",
+    errName3Parts:
+      "يجب أن يتضمن اسم الطالب 3 مقاطع على الأقل (الاسم الثلاثي). تم إدخال: {count} كلمة.",
     errGradeReq: "يجب اختيار مرحلة دراسية واحدة على الأقل",
-    errYearFormat: "العام الدراسي يجب أن يكون بصيغة YYYY/YYYY (مثال: 2025/2026)",
+    errYearFormat:
+      "العام الدراسي يجب أن يكون بصيغة YYYY/YYYY (مثال: 2025/2026)",
     msgCreated: "تم تسجيل طلب تصديق الشهادة بنجاح!",
     msgUpdated: "تم تحديث بيانات طلب التصديق بنجاح!",
     msgStatusUpdated: "تم تحديث حالة التصديق إلى {status}",
     msgDeleted: "تم حذف سجل التصديق بنجاح",
     confirmDelete: "هل أنت متأكد من رغبتك في حذف هذا السجل؟",
-    confirmDeleteNamed: "هل أنت متأكد من رغبتك في حذف سجل الطالب '{name}'؟ لا يمكن التراجع عن هذا الإجراء.",
+    confirmDeleteNamed:
+      "هل أنت متأكد من رغبتك في حذف سجل الطالب '{name}'؟ لا يمكن التراجع عن هذا الإجراء.",
     exportDownloading: "جاري تنزيل ملف الإكسل (CSV)...",
   },
 };
@@ -314,7 +325,7 @@ const state = {
   grade: "ALL",
   page: 1,
   pageSize: savedPageSize,
-  limit: savedPageSize === "ALL" ? 50000 : (parseInt(savedPageSize, 10) || 10),
+  limit: savedPageSize === "ALL" ? 50000 : parseInt(savedPageSize, 10) || 10,
   totalPages: 1,
   totalRecords: 0,
   records: [],
@@ -328,8 +339,16 @@ const state = {
 const GRADE_MAP = {
   GRADE_9: { en: "Grade 9", ar: "الصف التاسع", cls: "grade-tag-9" },
   GRADE_10: { en: "Grade 10", ar: "العاشر", cls: "grade-tag-10" },
-  GRADE_11_SCI: { en: "Grade 11 Science", ar: "الحادي عشر علمي", cls: "grade-tag-sci" },
-  GRADE_11_LIT: { en: "Grade 11 Arts", ar: "الحادي عشر ادبي", cls: "grade-tag-lit" },
+  GRADE_11_SCI: {
+    en: "Grade 11 Science",
+    ar: "الحادي عشر علمي",
+    cls: "grade-tag-sci",
+  },
+  GRADE_11_LIT: {
+    en: "Grade 11 Arts",
+    ar: "الحادي عشر ادبي",
+    cls: "grade-tag-lit",
+  },
   TAWJIHI: { en: "Tawjihi", ar: "التوجيهي", cls: "grade-tag-tawjihi" },
 };
 
@@ -375,7 +394,9 @@ const DOM = {
   // Form Fields (No School Name field)
   studentNameInput: document.getElementById("studentNameInput"),
   nameCountBadge: document.getElementById("nameCountBadge"),
-  gradeMultiSelectContainer: document.getElementById("gradeMultiSelectContainer"),
+  gradeMultiSelectContainer: document.getElementById(
+    "gradeMultiSelectContainer",
+  ),
   gradesSelectedBadge: document.getElementById("gradesSelectedBadge"),
   securityNumberInput: document.getElementById("securityNumberInput"),
   btnGenSecNum: document.getElementById("btnGenSecNum"),
@@ -520,7 +541,8 @@ function updateMultiSelectLabels() {
     const val = item.getAttribute("data-grade");
     const textEl = item.querySelector(".pill-text");
     if (textEl && GRADE_MAP[val]) {
-      textEl.textContent = state.lang === "ar" ? GRADE_MAP[val].ar : GRADE_MAP[val].en;
+      textEl.textContent =
+        state.lang === "ar" ? GRADE_MAP[val].ar : GRADE_MAP[val].en;
     }
   });
 }
@@ -605,7 +627,8 @@ function bindEventListeners() {
     DOM.pageSizeSelect.addEventListener("change", (e) => {
       const selectedSize = e.target.value;
       state.pageSize = selectedSize;
-      state.limit = selectedSize === "ALL" ? 50000 : (parseInt(selectedSize, 10) || 10);
+      state.limit =
+        selectedSize === "ALL" ? 50000 : parseInt(selectedSize, 10) || 10;
       sessionStorage.setItem("student_gateway_page_size", selectedSize);
       localStorage.setItem("student_gateway_page_size", selectedSize);
       state.page = 1;
@@ -638,11 +661,15 @@ function bindEventListeners() {
   // Aggressive UI Optimization: 300ms Debounced Listeners on ALL Form Text Inputs
   // 1. Student Name Input (300ms debounce)
   DOM.studentNameInput.addEventListener("input", debouncedNameInput);
-  DOM.studentNameInput.addEventListener("blur", () => debouncedNameInput.flush());
+  DOM.studentNameInput.addEventListener("blur", () =>
+    debouncedNameInput.flush(),
+  );
 
   // 2. Security Number Input (300ms debounce)
   DOM.securityNumberInput.addEventListener("input", debouncedSecNumInput);
-  DOM.securityNumberInput.addEventListener("blur", () => debouncedSecNumInput.flush());
+  DOM.securityNumberInput.addEventListener("blur", () =>
+    debouncedSecNumInput.flush(),
+  );
 
   // 3. Birth Year Input (Numeric filtering + auto-calculates Academic Year)
   if (DOM.birthYearInput) {
@@ -663,12 +690,16 @@ function bindEventListeners() {
     handleAcademicYearMask(e);
     debouncedAcademicYearInput();
   });
-  DOM.academicYearInput.addEventListener("blur", () => debouncedAcademicYearInput.flush());
+  DOM.academicYearInput.addEventListener("blur", () =>
+    debouncedAcademicYearInput.flush(),
+  );
 
   // 5. Section Input (300ms debounce)
   if (DOM.sectionInput) {
     DOM.sectionInput.addEventListener("input", debouncedSectionInput);
-    DOM.sectionInput.addEventListener("blur", () => debouncedSectionInput.flush());
+    DOM.sectionInput.addEventListener("blur", () =>
+      debouncedSectionInput.flush(),
+    );
   }
 
   // 6. Notes Textarea (300ms debounce)
@@ -717,8 +748,12 @@ function bindEventListeners() {
  * Dynamic CSV Export handler - strictly reads current value from status filter dropdown
  */
 function triggerDynamicCsvExport() {
-  const filterDropdown = DOM.statusFilter || document.getElementById("statusFilter");
-  const selectedStatus = filterDropdown && filterDropdown.value ? filterDropdown.value.trim() : "ALL";
+  const filterDropdown =
+    DOM.statusFilter || document.getElementById("statusFilter");
+  const selectedStatus =
+    filterDropdown && filterDropdown.value
+      ? filterDropdown.value.trim()
+      : "ALL";
 
   let exportUrl = "/api/certificates/export";
   if (
@@ -729,7 +764,9 @@ function triggerDynamicCsvExport() {
     exportUrl += `?status=${encodeURIComponent(selectedStatus)}`;
   }
 
-  console.log(`[Export CSV] Selected Status: "${selectedStatus}" -> Download URL: ${exportUrl}`);
+  console.log(
+    `[Export CSV] Selected Status: "${selectedStatus}" -> Download URL: ${exportUrl}`,
+  );
   window.location.href = exportUrl;
   if (typeof showToast === "function") {
     showToast(t("exportDownloading"), "success");
@@ -1009,7 +1046,10 @@ function extractGradeNumbers(gradeInput) {
  */
 function calculateAcademicYearFromBirthYear(birthYear, gradeLevels) {
   if (!birthYear) return null;
-  const bYear = typeof birthYear === "number" ? birthYear : parseInt(String(birthYear).trim(), 10);
+  const bYear =
+    typeof birthYear === "number"
+      ? birthYear
+      : parseInt(String(birthYear).trim(), 10);
   if (isNaN(bYear) || bYear < 1950 || bYear > 2030) return null;
 
   const numbers = extractGradeNumbers(gradeLevels);
@@ -1030,7 +1070,10 @@ function triggerAutoAcademicYearCalc() {
   if (!DOM.birthYearInput || !DOM.academicYearInput) return;
   const birthVal = DOM.birthYearInput.value.trim();
   if (/^\d{4}$/.test(birthVal) && state.selectedGrades.size > 0) {
-    const calculated = calculateAcademicYearFromBirthYear(birthVal, Array.from(state.selectedGrades));
+    const calculated = calculateAcademicYearFromBirthYear(
+      birthVal,
+      Array.from(state.selectedGrades),
+    );
     if (calculated) {
       DOM.academicYearInput.value = calculated;
       formState.academic_year = calculated;
@@ -1043,7 +1086,11 @@ function triggerAutoAcademicYearCalc() {
  * Smart timeline progression matching for academic year
  */
 function isRecordActiveInAcademicYear(record, targetAcademicYear) {
-  if (!targetAcademicYear || targetAcademicYear === "ALL" || targetAcademicYear === "جميع الأعوام الدراسية") {
+  if (
+    !targetAcademicYear ||
+    targetAcademicYear === "ALL" ||
+    targetAcademicYear === "جميع الأعوام الدراسية"
+  ) {
     return true;
   }
   if (!record || !record.academic_year) return false;
@@ -1051,7 +1098,11 @@ function isRecordActiveInAcademicYear(record, targetAcademicYear) {
   const targetTrimmed = targetAcademicYear.trim();
   const recTrimmed = String(record.academic_year).trim();
 
-  if (recTrimmed === targetTrimmed || recTrimmed.includes(targetTrimmed) || targetTrimmed.includes(recTrimmed)) {
+  if (
+    recTrimmed === targetTrimmed ||
+    recTrimmed.includes(targetTrimmed) ||
+    targetTrimmed.includes(recTrimmed)
+  ) {
     return true;
   }
 
@@ -1081,8 +1132,8 @@ function sortAcademicYears(yearsArray) {
       yearsArray
         .filter((y) => y !== null && y !== undefined)
         .map((y) => String(y).trim())
-        .filter((y) => Boolean(y) && y !== "null" && y !== "undefined")
-    )
+        .filter((y) => Boolean(y) && y !== "null" && y !== "undefined"),
+    ),
   );
   return unique.sort((a, b) => {
     const startA = parseAcademicYearStart(a) || 0;
@@ -1167,408 +1218,436 @@ function syncYearFilterOptions(records) {
   } else {
     DOM.yearFilter.value = "ALL";
   }
-/**
- * Sorts student records by request_date (descending newest-first, or ascending oldest-first)
- * @param {Array} records
- * @param {'desc'|'asc'} order
- * @returns {Array} sorted records
- */
-function sortRecordsByDate(records, order = state.dateSortOrder || "desc") {
-  if (!Array.isArray(records)) return [];
-  const isAsc = String(order).toLowerCase() === "asc";
-  return [...records].sort((a, b) => {
-    const timeA = a && a.request_date ? new Date(a.request_date).getTime() : 0;
-    const timeB = b && b.request_date ? new Date(b.request_date).getTime() : 0;
-    if (isNaN(timeA) || isNaN(timeB)) {
-      const strA = String((a && a.request_date) || "");
-      const strB = String((b && b.request_date) || "");
-      return isAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
-    }
-    if (timeA === timeB) {
-      const idA = (a && a.id) || 0;
-      const idB = (b && b.id) || 0;
-      return isAsc ? idA - idB : idB - idA;
-    }
-    return isAsc ? timeA - timeB : timeB - timeA;
-  });
-}
-
-/**
- * Updates visual sort indicator icon and accessibility labels in table header
- */
-function updateSortIndicator() {
-  const icon = DOM.dateSortIcon || document.getElementById("dateSortIcon");
-  const th = DOM.thRequestDate || document.getElementById("thRequestDate");
-  if (!icon) return;
-
-  const isDesc = state.dateSortOrder === "desc";
-  icon.textContent = isDesc ? "▼" : "▲";
-  icon.className = `sort-indicator ${isDesc ? "active-desc" : "active-asc"}`;
-  const titleKey = isDesc ? "sortDateDesc" : "sortDateAsc";
-  const titleText = t(titleKey);
-  icon.setAttribute("title", titleText);
-  if (th) {
-    th.setAttribute("title", titleText);
-    th.setAttribute("aria-sort", isDesc ? "descending" : "ascending");
-  }
-}
-
-/**
- * Toggles request date sort direction between descending and ascending.
- * Immediately re-orders displayed rows in-place without losing filter or pagination states,
- * and fetches the re-ordered page from the server.
- */
-function toggleDateSort() {
-  state.dateSortOrder = state.dateSortOrder === "desc" ? "asc" : "desc";
-  updateSortIndicator();
-  if (state.records && state.records.length > 0) {
-    state.records = sortRecordsByDate(state.records, state.dateSortOrder);
-    renderTable(state.records);
-  }
-  loadCertificates();
-}
-
-window.sortAcademicYears = sortAcademicYears;
-window.syncYearFilterOptions = syncYearFilterOptions;
-window.parseGradeKeys = parseGradeKeys;
-window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
-window.extractGradeNumbers = extractGradeNumbers;
-window.calculateAcademicYearFromBirthYear = calculateAcademicYearFromBirthYear;
-window.triggerAutoAcademicYearCalc = triggerAutoAcademicYearCalc;
-window.sortRecordsByDate = sortRecordsByDate;
-window.toggleDateSort = toggleDateSort;
-window.updateSortIndicator = updateSortIndicator;
-
-// ==========================================
-// API Operations
-// ==========================================
-
-/**
- * Fetch and display paginated certificate records
- */
-async function loadCertificates() {
-  try {
-    const params = new URLSearchParams({
-      page: state.page,
-      limit: state.limit,
-      search: state.search,
-      status: state.status,
-      academic_year: state.academic_year,
-      grade: state.grade,
-      sort_by: "request_date",
-      sort_order: state.dateSortOrder || "desc",
-    });
-
-    const res = await fetch(`/api/certificates?${params.toString()}`);
-    const data = await res.json();
-
-    if (data.success) {
-      state.records = sortRecordsByDate(data.data, state.dateSortOrder);
-      state.page = data.pagination.page;
-      state.totalPages = data.pagination.totalPages;
-      state.totalRecords = data.pagination.total;
-
-      syncYearFilterOptions(state.records);
-      renderTable(state.records);
-      renderPagination(data.pagination);
-    } else {
-      showToast("Failed to fetch records", "error");
-    }
-  } catch (error) {
-    console.error("Fetch error:", error);
-    showToast("Network error while loading data", "error");
-  }
-}
-
-/**
- * Fetch dashboard statistics (total, waiting, written, submitted, certified, self_certified)
- */
-async function fetchDashboardMetrics() {
-  try {
-    const res = await fetch("/api/certificates/stats");
-    const data = await res.json();
-    if (data.success) {
-      if (DOM.statTotal) DOM.statTotal.textContent = data.data.total ?? 0;
-      if (DOM.statWaiting) DOM.statWaiting.textContent = data.data.waiting ?? 0;
-      if (DOM.statWritten) DOM.statWritten.textContent = data.data.written ?? 0;
-      if (DOM.statSubmitted) DOM.statSubmitted.textContent = data.data.submitted ?? 0;
-      if (DOM.statCertified) DOM.statCertified.textContent = data.data.certified ?? 0;
-      if (DOM.statSelfCertified) DOM.statSelfCertified.textContent = data.data.self_certified ?? 0;
-    }
-  } catch (err) {
-    console.error("Metrics error:", err);
-  }
-}
-
-/**
- * Filter the certificates table by clicking a quick status chip
- */
-function filterByQuickStatus(statusValue) {
-  if (DOM.statusFilter) {
-    DOM.statusFilter.value = statusValue;
-    state.statusFilter = statusValue;
-    state.currentPage = 1;
-    fetchCertificates();
-  }
-}
-window.filterByQuickStatus = filterByQuickStatus;
-
-/**
- * Handle request form submission (Supports both CREATE via POST and EDIT via PUT)
- */
-async function handleFormSubmit(e) {
-  e.preventDefault();
-  flushAllFormDebouncers();
-  clearAllErrors();
-
-  let selectedGradesArray = Array.from(state.selectedGrades);
-
-  // If in edit mode and no grades are selected in the UI, gracefully preserve existing record grades
-  if (state.editingId && selectedGradesArray.length === 0) {
-    const existing = state.records.find((r) => r.id === state.editingId);
-    if (existing && existing.grade_level) {
-      selectedGradesArray = parseGradeKeys(existing.grade_level);
-    }
-  }
-
-  const secNum = DOM.securityNumberInput.value.trim().toUpperCase();
-
-  const payload = {
-    student_name: DOM.studentNameInput.value.trim(),
-    grade_level: selectedGradesArray,
-    section: DOM.sectionInput ? (DOM.sectionInput.value.trim() || null) : null,
-    security_number: secNum || null,
-    academic_year: DOM.academicYearInput.value.trim(),
-    request_date: DOM.requestDateInput.value,
-    status: DOM.statusInput.value || "انتظار",
-    notes: DOM.notesInput.value.trim(),
-  };
-
-  // 3-part name check (minimum 3 words)
-  const parts = payload.student_name.split(/\s+/).filter(Boolean);
-  if (parts.length < 3) {
-    showFieldError("student_name", t("errName3Parts", { count: parts.length }));
-    return;
-  }
-
-  // Grade level check
-  if (payload.grade_level.length === 0) {
-    showFieldError("grade_level", t("errGradeReq"));
-    return;
-  }
-
-  // Security number is COMPLETELY OPTIONAL. If entered, check minimum length
-  if (payload.security_number && payload.security_number.length < 4) {
-    showFieldError("security_number", "الرقم الأمني يجب أن يتكون من 4 خانات على الأقل إن وُجد");
-    return;
-  }
-
-  // Academic year check
-  if (!/^\d{4}\/\d{4}$/.test(payload.academic_year)) {
-    showFieldError("academic_year", t("errYearFormat"));
-    return;
-  }
-
-  const isEdit = Boolean(state.editingId);
-  const endpoint = isEdit ? `/api/certificates/${state.editingId}` : "/api/certificates";
-  const method = isEdit ? "PUT" : "POST";
-
-  try {
-    const submitBtn = document.getElementById("btnSubmitForm");
-    submitBtn.disabled = true;
-    document.getElementById("btnSubmitText").textContent = t("saving");
-
-    const res = await fetch(endpoint, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json();
-    submitBtn.disabled = false;
-    document.getElementById("btnSubmitText").textContent = isEdit ? t("btnUpdateRecord") : t("btnSaveRecord");
-
-    if (res.status === 200 || res.status === 201) {
-      showToast(isEdit ? t("msgUpdated") : t("msgCreated"), "success");
-      closeRequestModal();
-      Promise.all([loadCertificates(), fetchDashboardMetrics()]).catch(console.error);
-    } else if (res.status === 409) {
-      showFieldError("security_number", result.errors?.security_number || "Security number already exists");
-    } else if (result.errors) {
-      for (const [field, msg] of Object.entries(result.errors)) {
-        showFieldError(field, Array.isArray(msg) ? msg[0] : msg);
+  /**
+   * Sorts student records by request_date (descending newest-first, or ascending oldest-first)
+   * @param {Array} records
+   * @param {'desc'|'asc'} order
+   * @returns {Array} sorted records
+   */
+  function sortRecordsByDate(records, order = state.dateSortOrder || "desc") {
+    if (!Array.isArray(records)) return [];
+    const isAsc = String(order).toLowerCase() === "asc";
+    return [...records].sort((a, b) => {
+      const timeA =
+        a && a.request_date ? new Date(a.request_date).getTime() : 0;
+      const timeB =
+        b && b.request_date ? new Date(b.request_date).getTime() : 0;
+      if (isNaN(timeA) || isNaN(timeB)) {
+        const strA = String((a && a.request_date) || "");
+        const strB = String((b && b.request_date) || "");
+        return isAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
       }
-    } else {
-      showToast(result.message || "Failed to save request", "error");
-    }
-  } catch (err) {
-    console.error("Submission error:", err);
-    showToast("Network error during submission", "error");
-    document.getElementById("btnSubmitForm").disabled = false;
-    document.getElementById("btnSubmitText").textContent = isEdit ? t("btnUpdateRecord") : t("btnSaveRecord");
-  }
-}
-
-/**
- * Update record status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق)
- */
-async function updateStatus(id, newStatus) {
-  try {
-    const res = await fetch(`/api/certificates/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
+      if (timeA === timeB) {
+        const idA = (a && a.id) || 0;
+        const idB = (b && b.id) || 0;
+        return isAsc ? idA - idB : idB - idA;
+      }
+      return isAsc ? timeA - timeB : timeB - timeA;
     });
-    const result = await res.json();
-    if (result.success) {
-      const localizedStatus =
-        newStatus === "انتظار"
-          ? t("statusWaiting")
-          : newStatus === "تمت كتابة الشهادة"
-          ? t("statusWritten")
-          : newStatus === "تم الرفع للتصديق"
-          ? t("statusSubmitted")
-          : newStatus;
-
-      showToast(t("msgStatusUpdated", { status: localizedStatus }), "success");
-      loadCertificates();
-      fetchDashboardMetrics();
-    } else {
-      showToast(result.message || "Failed to update status", "error");
-    }
-  } catch (err) {
-    showToast("Network error", "error");
   }
-}
 
-/**
- * Delete certificate request with localized safety confirmation prompt
- */
-async function deleteRecord(id, studentName) {
-  const confirmMsg = studentName
-    ? t("confirmDeleteNamed", { name: studentName })
-    : t("confirmDelete");
+  /**
+   * Updates visual sort indicator icon and accessibility labels in table header
+   */
+  function updateSortIndicator() {
+    const icon = DOM.dateSortIcon || document.getElementById("dateSortIcon");
+    const th = DOM.thRequestDate || document.getElementById("thRequestDate");
+    if (!icon) return;
 
-  if (!confirm(confirmMsg)) return;
-
-  try {
-    const res = await fetch(`/api/certificates/${id}`, { method: "DELETE" });
-    const result = await res.json();
-    if (result.success) {
-      showToast(t("msgDeleted"), "success");
-      loadCertificates();
-      fetchDashboardMetrics();
-    } else {
-      showToast(result.message || "Delete failed", "error");
-    }
-  } catch (err) {
-    showToast("Network error", "error");
-  }
-}
-
-// ==========================================
-// Rendering (7 columns - School Name removed)
-// ==========================================
-
-/**
- * Formats grade_level directly as a clean, unified single badge representation (e.g., 9, 10, or 9 + 10)
- * rather than splitting into multiple complex stacked text badges.
- */
-function formatGradeLevelDisplay(gradeInput) {
-  if (!gradeInput) return "-";
-
-  if (typeof gradeInput === "string") {
-    const trimmed = gradeInput.trim();
-    if (
-      !trimmed.startsWith("[") &&
-      !trimmed.includes("GRADE_") &&
-      !trimmed.includes("الصف") &&
-      !trimmed.includes("العاشر") &&
-      !trimmed.includes("حادي") &&
-      !trimmed.includes("توجيهي")
-    ) {
-      return trimmed;
+    const isDesc = state.dateSortOrder === "desc";
+    icon.textContent = isDesc ? "▼" : "▲";
+    icon.className = `sort-indicator ${isDesc ? "active-desc" : "active-asc"}`;
+    const titleKey = isDesc ? "sortDateDesc" : "sortDateAsc";
+    const titleText = t(titleKey);
+    icon.setAttribute("title", titleText);
+    if (th) {
+      th.setAttribute("title", titleText);
+      th.setAttribute("aria-sort", isDesc ? "descending" : "ascending");
     }
   }
 
-  let list = [];
-  if (Array.isArray(gradeInput)) {
-    list = gradeInput;
-  } else if (typeof gradeInput === "string") {
-    const trimmed = gradeInput.trim();
-    if (trimmed.startsWith("[")) {
-      try {
-        list = JSON.parse(trimmed);
-      } catch {
+  /**
+   * Toggles request date sort direction between descending and ascending.
+   * Immediately re-orders displayed rows in-place without losing filter or pagination states,
+   * and fetches the re-ordered page from the server.
+   */
+  function toggleDateSort() {
+    state.dateSortOrder = state.dateSortOrder === "desc" ? "asc" : "desc";
+    updateSortIndicator();
+    if (state.records && state.records.length > 0) {
+      state.records = sortRecordsByDate(state.records, state.dateSortOrder);
+      renderTable(state.records);
+    }
+    loadCertificates();
+  }
+
+  window.sortAcademicYears = sortAcademicYears;
+  window.syncYearFilterOptions = syncYearFilterOptions;
+  window.parseGradeKeys = parseGradeKeys;
+  window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
+  window.extractGradeNumbers = extractGradeNumbers;
+  window.calculateAcademicYearFromBirthYear =
+    calculateAcademicYearFromBirthYear;
+  window.triggerAutoAcademicYearCalc = triggerAutoAcademicYearCalc;
+  window.sortRecordsByDate = sortRecordsByDate;
+  window.toggleDateSort = toggleDateSort;
+  window.updateSortIndicator = updateSortIndicator;
+
+  // ==========================================
+  // API Operations
+  // ==========================================
+
+  /**
+   * Fetch and display paginated certificate records
+   */
+  async function loadCertificates() {
+    try {
+      const params = new URLSearchParams({
+        page: state.page,
+        limit: state.limit,
+        search: state.search,
+        status: state.status,
+        academic_year: state.academic_year,
+        grade: state.grade,
+        sort_by: "request_date",
+        sort_order: state.dateSortOrder || "desc",
+      });
+
+      const res = await fetch(`/api/certificates?${params.toString()}`);
+      const data = await res.json();
+
+      if (data.success) {
+        state.records = sortRecordsByDate(data.data, state.dateSortOrder);
+        state.page = data.pagination.page;
+        state.totalPages = data.pagination.totalPages;
+        state.totalRecords = data.pagination.total;
+
+        syncYearFilterOptions(state.records);
+        renderTable(state.records);
+        renderPagination(data.pagination);
+      } else {
+        showToast("Failed to fetch records", "error");
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      showToast("Network error while loading data", "error");
+    }
+  }
+
+  /**
+   * Fetch dashboard statistics (total, waiting, written, submitted, certified, self_certified)
+   */
+  async function fetchDashboardMetrics() {
+    try {
+      const res = await fetch("/api/certificates/stats");
+      const data = await res.json();
+      if (data.success) {
+        if (DOM.statTotal) DOM.statTotal.textContent = data.data.total ?? 0;
+        if (DOM.statWaiting)
+          DOM.statWaiting.textContent = data.data.waiting ?? 0;
+        if (DOM.statWritten)
+          DOM.statWritten.textContent = data.data.written ?? 0;
+        if (DOM.statSubmitted)
+          DOM.statSubmitted.textContent = data.data.submitted ?? 0;
+        if (DOM.statCertified)
+          DOM.statCertified.textContent = data.data.certified ?? 0;
+        if (DOM.statSelfCertified)
+          DOM.statSelfCertified.textContent = data.data.self_certified ?? 0;
+      }
+    } catch (err) {
+      console.error("Metrics error:", err);
+    }
+  }
+
+  /**
+   * Filter the certificates table by clicking a quick status chip
+   */
+  function filterByQuickStatus(statusValue) {
+    if (DOM.statusFilter) {
+      DOM.statusFilter.value = statusValue;
+      state.statusFilter = statusValue;
+      state.currentPage = 1;
+      fetchCertificates();
+    }
+  }
+  window.filterByQuickStatus = filterByQuickStatus;
+
+  /**
+   * Handle request form submission (Supports both CREATE via POST and EDIT via PUT)
+   */
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    flushAllFormDebouncers();
+    clearAllErrors();
+
+    let selectedGradesArray = Array.from(state.selectedGrades);
+
+    // If in edit mode and no grades are selected in the UI, gracefully preserve existing record grades
+    if (state.editingId && selectedGradesArray.length === 0) {
+      const existing = state.records.find((r) => r.id === state.editingId);
+      if (existing && existing.grade_level) {
+        selectedGradesArray = parseGradeKeys(existing.grade_level);
+      }
+    }
+
+    const secNum = DOM.securityNumberInput.value.trim().toUpperCase();
+
+    const payload = {
+      student_name: DOM.studentNameInput.value.trim(),
+      grade_level: selectedGradesArray,
+      section: DOM.sectionInput ? DOM.sectionInput.value.trim() || null : null,
+      security_number: secNum || null,
+      academic_year: DOM.academicYearInput.value.trim(),
+      request_date: DOM.requestDateInput.value,
+      status: DOM.statusInput.value || "انتظار",
+      notes: DOM.notesInput.value.trim(),
+    };
+
+    // 3-part name check (minimum 3 words)
+    const parts = payload.student_name.split(/\s+/).filter(Boolean);
+    if (parts.length < 3) {
+      showFieldError(
+        "student_name",
+        t("errName3Parts", { count: parts.length }),
+      );
+      return;
+    }
+
+    // Grade level check
+    if (payload.grade_level.length === 0) {
+      showFieldError("grade_level", t("errGradeReq"));
+      return;
+    }
+
+    // Security number is COMPLETELY OPTIONAL. If entered, check minimum length
+    if (payload.security_number && payload.security_number.length < 4) {
+      showFieldError(
+        "security_number",
+        "الرقم الأمني يجب أن يتكون من 4 خانات على الأقل إن وُجد",
+      );
+      return;
+    }
+
+    // Academic year check
+    if (!/^\d{4}\/\d{4}$/.test(payload.academic_year)) {
+      showFieldError("academic_year", t("errYearFormat"));
+      return;
+    }
+
+    const isEdit = Boolean(state.editingId);
+    const endpoint = isEdit
+      ? `/api/certificates/${state.editingId}`
+      : "/api/certificates";
+    const method = isEdit ? "PUT" : "POST";
+
+    try {
+      const submitBtn = document.getElementById("btnSubmitForm");
+      submitBtn.disabled = true;
+      document.getElementById("btnSubmitText").textContent = t("saving");
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      submitBtn.disabled = false;
+      document.getElementById("btnSubmitText").textContent = isEdit
+        ? t("btnUpdateRecord")
+        : t("btnSaveRecord");
+
+      if (res.status === 200 || res.status === 201) {
+        showToast(isEdit ? t("msgUpdated") : t("msgCreated"), "success");
+        closeRequestModal();
+        Promise.all([loadCertificates(), fetchDashboardMetrics()]).catch(
+          console.error,
+        );
+      } else if (res.status === 409) {
+        showFieldError(
+          "security_number",
+          result.errors?.security_number || "Security number already exists",
+        );
+      } else if (result.errors) {
+        for (const [field, msg] of Object.entries(result.errors)) {
+          showFieldError(field, Array.isArray(msg) ? msg[0] : msg);
+        }
+      } else {
+        showToast(result.message || "Failed to save request", "error");
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      showToast("Network error during submission", "error");
+      document.getElementById("btnSubmitForm").disabled = false;
+      document.getElementById("btnSubmitText").textContent = isEdit
+        ? t("btnUpdateRecord")
+        : t("btnSaveRecord");
+    }
+  }
+
+  /**
+   * Update record status (انتظار, تمت كتابة الشهادة, تم الرفع للتصديق)
+   */
+  async function updateStatus(id, newStatus) {
+    try {
+      const res = await fetch(`/api/certificates/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        const localizedStatus =
+          newStatus === "انتظار"
+            ? t("statusWaiting")
+            : newStatus === "تمت كتابة الشهادة"
+              ? t("statusWritten")
+              : newStatus === "تم الرفع للتصديق"
+                ? t("statusSubmitted")
+                : newStatus;
+
+        showToast(
+          t("msgStatusUpdated", { status: localizedStatus }),
+          "success",
+        );
+        loadCertificates();
+        fetchDashboardMetrics();
+      } else {
+        showToast(result.message || "Failed to update status", "error");
+      }
+    } catch (err) {
+      showToast("Network error", "error");
+    }
+  }
+
+  /**
+   * Delete certificate request with localized safety confirmation prompt
+   */
+  async function deleteRecord(id, studentName) {
+    const confirmMsg = studentName
+      ? t("confirmDeleteNamed", { name: studentName })
+      : t("confirmDelete");
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/certificates/${id}`, { method: "DELETE" });
+      const result = await res.json();
+      if (result.success) {
+        showToast(t("msgDeleted"), "success");
+        loadCertificates();
+        fetchDashboardMetrics();
+      } else {
+        showToast(result.message || "Delete failed", "error");
+      }
+    } catch (err) {
+      showToast("Network error", "error");
+    }
+  }
+
+  // ==========================================
+  // Rendering (7 columns - School Name removed)
+  // ==========================================
+
+  /**
+   * Formats grade_level directly as a clean, unified single badge representation (e.g., 9, 10, or 9 + 10)
+   * rather than splitting into multiple complex stacked text badges.
+   */
+  function formatGradeLevelDisplay(gradeInput) {
+    if (!gradeInput) return "-";
+
+    if (typeof gradeInput === "string") {
+      const trimmed = gradeInput.trim();
+      if (
+        !trimmed.startsWith("[") &&
+        !trimmed.includes("GRADE_") &&
+        !trimmed.includes("الصف") &&
+        !trimmed.includes("العاشر") &&
+        !trimmed.includes("حادي") &&
+        !trimmed.includes("توجيهي")
+      ) {
+        return trimmed;
+      }
+    }
+
+    let list = [];
+    if (Array.isArray(gradeInput)) {
+      list = gradeInput;
+    } else if (typeof gradeInput === "string") {
+      const trimmed = gradeInput.trim();
+      if (trimmed.startsWith("[")) {
+        try {
+          list = JSON.parse(trimmed);
+        } catch {
+          list = [trimmed];
+        }
+      } else if (trimmed.includes("+")) {
+        return trimmed;
+      } else if (trimmed.includes(";")) {
+        list = trimmed.split(";");
+      } else if (trimmed.includes(",")) {
+        list = trimmed.split(",");
+      } else {
         list = [trimmed];
       }
-    } else if (trimmed.includes("+")) {
-      return trimmed;
-    } else if (trimmed.includes(";")) {
-      list = trimmed.split(";");
-    } else if (trimmed.includes(",")) {
-      list = trimmed.split(",");
-    } else {
-      list = [trimmed];
     }
+
+    const GRADE_NUM_MAP = {
+      GRADE_9: "9",
+      GRADE_10: "10",
+      GRADE_11_SCI: "11",
+      GRADE_11_LIT: "11",
+      TAWJIHI: "12",
+      "الصف التاسع": "9",
+      العاشر: "10",
+      "الحادي عشر علمي": "11",
+      "الحادي عشر ادبي": "11",
+      التوجيهي: "12",
+    };
+
+    const numOrder = ["9", "10", "11", "12"];
+    const matched = new Set();
+
+    for (const item of list) {
+      if (!item) continue;
+      const str = String(item).trim();
+      if (GRADE_NUM_MAP[str]) {
+        matched.add(GRADE_NUM_MAP[str]);
+      } else if (str === "9" || str.includes("تاسع")) {
+        matched.add("9");
+      } else if (str === "10" || str.includes("عاشر")) {
+        matched.add("10");
+      } else if (
+        str === "11" ||
+        str.includes("حادي عشر") ||
+        str.includes("علمي") ||
+        str.includes("ادبي") ||
+        str.includes("أدبي")
+      ) {
+        matched.add("11");
+      } else if (str === "12" || str.includes("توجيهي")) {
+        matched.add("12");
+      } else {
+        matched.add(str);
+      }
+    }
+
+    const sorted = numOrder.filter((n) => matched.has(n));
+    for (const val of matched) {
+      if (!numOrder.includes(val) && !sorted.includes(val)) {
+        sorted.push(val);
+      }
+    }
+
+    return sorted.length > 0 ? sorted.join(" + ") : String(gradeInput);
   }
 
-  const GRADE_NUM_MAP = {
-    GRADE_9: "9",
-    GRADE_10: "10",
-    GRADE_11_SCI: "11",
-    GRADE_11_LIT: "11",
-    TAWJIHI: "12",
-    "الصف التاسع": "9",
-    "العاشر": "10",
-    "الحادي عشر علمي": "11",
-    "الحادي عشر ادبي": "11",
-    "التوجيهي": "12",
-  };
-
-  const numOrder = ["9", "10", "11", "12"];
-  const matched = new Set();
-
-  for (const item of list) {
-    if (!item) continue;
-    const str = String(item).trim();
-    if (GRADE_NUM_MAP[str]) {
-      matched.add(GRADE_NUM_MAP[str]);
-    } else if (str === "9" || str.includes("تاسع")) {
-      matched.add("9");
-    } else if (str === "10" || str.includes("عاشر")) {
-      matched.add("10");
-    } else if (
-      str === "11" ||
-      str.includes("حادي عشر") ||
-      str.includes("علمي") ||
-      str.includes("ادبي") ||
-      str.includes("أدبي")
-    ) {
-      matched.add("11");
-    } else if (str === "12" || str.includes("توجيهي")) {
-      matched.add("12");
-    } else {
-      matched.add(str);
-    }
-  }
-
-  const sorted = numOrder.filter((n) => matched.has(n));
-  for (const val of matched) {
-    if (!numOrder.includes(val) && !sorted.includes(val)) {
-      sorted.push(val);
-    }
-  }
-
-  return sorted.length > 0 ? sorted.join(" + ") : String(gradeInput);
-}
-
-/**
- * Render table rows with word wrapping, localized badges, and clean unified grade badges
- */
-function renderTable(records) {
-  if (!records || records.length === 0) {
-    DOM.tableBody.innerHTML = `
+  /**
+   * Render table rows with word wrapping, localized badges, and clean unified grade badges
+   */
+  function renderTable(records) {
+    if (!records || records.length === 0) {
+      DOM.tableBody.innerHTML = `
       <tr>
         <td colspan="7" class="empty-state">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1580,43 +1659,46 @@ function renderTable(records) {
         </td>
       </tr>
     `;
-    return;
-  }
+      return;
+    }
 
-  const sortedRecords = sortRecordsByDate(records, state.dateSortOrder);
+    const sortedRecords = sortRecordsByDate(records, state.dateSortOrder);
 
-  DOM.tableBody.innerHTML = sortedRecords
-    .map((item) => {
-      let statusClass = "waiting";
-      let statusLabel = t("statusWaiting");
+    DOM.tableBody.innerHTML = sortedRecords
+      .map((item) => {
+        let statusClass = "waiting";
+        let statusLabel = t("statusWaiting");
 
-      if (item.status === "تمت كتابة الشهادة") {
-        statusClass = "written";
-        statusLabel = t("statusWritten");
-      } else if (item.status === "تم الرفع للتصديق") {
-        statusClass = "submitted";
-        statusLabel = t("statusSubmitted");
-      } else if (item.status === "تصديق شخصي" || item.status === "تصديق ع حسابه الشخصي") {
-        statusClass = "self-certified";
-        statusLabel = t("statusSelfCertified");
-      } else if (item.status === "تم التصديق") {
-        statusClass = "certified";
-        statusLabel = t("statusCertified");
-      } else {
-        statusClass = "waiting";
-        statusLabel = t("statusWaiting");
-      }
+        if (item.status === "تمت كتابة الشهادة") {
+          statusClass = "written";
+          statusLabel = t("statusWritten");
+        } else if (item.status === "تم الرفع للتصديق") {
+          statusClass = "submitted";
+          statusLabel = t("statusSubmitted");
+        } else if (
+          item.status === "تصديق شخصي" ||
+          item.status === "تصديق ع حسابه الشخصي"
+        ) {
+          statusClass = "self-certified";
+          statusLabel = t("statusSelfCertified");
+        } else if (item.status === "تم التصديق") {
+          statusClass = "certified";
+          statusLabel = t("statusCertified");
+        } else {
+          statusClass = "waiting";
+          statusLabel = t("statusWaiting");
+        }
 
-      // Render clean, unified single grade badge (e.g., 9, 10, or 9 + 10)
-      const displayGrade = formatGradeLevelDisplay(item.grade_level);
+        // Render clean, unified single grade badge (e.g., 9, 10, or 9 + 10)
+        const displayGrade = formatGradeLevelDisplay(item.grade_level);
 
-      const sectionHtml = item.section
-        ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
-        : "";
+        const sectionHtml = item.section
+          ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
+          : "";
 
-      // Security number pill or placeholder
-      const secNumHtml = item.security_number
-        ? `<div class="sec-code-pill font-mono">
+        // Security number pill or placeholder
+        const secNumHtml = item.security_number
+          ? `<div class="sec-code-pill font-mono">
              <span class="sec-code-text">${escapeHtml(item.security_number)}</span>
              <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(item.security_number)}')" title="${t("tooltipCopy")}">
                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1625,9 +1707,9 @@ function renderTable(records) {
                </svg>
              </button>
            </div>`
-        : `<span class="text-muted font-mono" style="color: #94a3b8; font-size: 0.85rem;">-</span>`;
+          : `<span class="text-muted font-mono" style="color: #94a3b8; font-size: 0.85rem;">-</span>`;
 
-      return `
+        return `
         <tr>
           <td>${secNumHtml}</td>
           <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
@@ -1686,113 +1768,120 @@ function renderTable(records) {
           </td>
         </tr>
       `;
-    })
-    .join("");
-}
+      })
+      .join("");
+  }
 
-/**
- * Render pagination numbers and localized summary
- */
-function renderPagination(pagination) {
-  const { page, limit, total, totalPages } = pagination;
-  const isShowAll = state.pageSize === "ALL" || limit >= 50000;
+  /**
+   * Render pagination numbers and localized summary
+   */
+  function renderPagination(pagination) {
+    const { page, limit, total, totalPages } = pagination;
+    const isShowAll = state.pageSize === "ALL" || limit >= 50000;
 
-  if (isShowAll) {
-    // When "All" is selected, hide the page navigation buttons completely
-    if (DOM.paginationButtons) {
-      DOM.paginationButtons.style.display = "none";
+    if (isShowAll) {
+      // When "All" is selected, hide the page navigation buttons completely
+      if (DOM.paginationButtons) {
+        DOM.paginationButtons.style.display = "none";
+      }
+      DOM.paginationInfo.textContent = t("showingAllInfo", { total });
+      return;
     }
-    DOM.paginationInfo.textContent = t("showingAllInfo", { total });
-    return;
-  }
 
-  // Restore navigation buttons in standard pagination mode
-  if (DOM.paginationButtons) {
-    DOM.paginationButtons.style.display = "flex";
-  }
+    // Restore navigation buttons in standard pagination mode
+    if (DOM.paginationButtons) {
+      DOM.paginationButtons.style.display = "flex";
+    }
 
-  const start = total === 0 ? 0 : (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
+    const start = total === 0 ? 0 : (page - 1) * limit + 1;
+    const end = Math.min(page * limit, total);
 
-  DOM.paginationInfo.textContent = t("showingInfo", { start, end, total });
-  DOM.btnPrevPage.disabled = page <= 1;
-  DOM.btnNextPage.disabled = page >= totalPages;
+    DOM.paginationInfo.textContent = t("showingInfo", { start, end, total });
+    DOM.btnPrevPage.disabled = page <= 1;
+    DOM.btnNextPage.disabled = page >= totalPages;
 
-  let pageBtnsHtml = "";
-  const maxButtons = 5;
-  let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
-  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-  if (endPage - startPage < maxButtons - 1) {
-    startPage = Math.max(1, endPage - maxButtons + 1);
-  }
+    let pageBtnsHtml = "";
+    const maxButtons = 5;
+    let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage < maxButtons - 1) {
+      startPage = Math.max(1, endPage - maxButtons + 1);
+    }
 
-  for (let i = startPage; i <= endPage; i++) {
-    pageBtnsHtml += `
+    for (let i = startPage; i <= endPage; i++) {
+      pageBtnsHtml += `
       <button class="page-num ${i === page ? "active" : ""}" onclick="goToPage(${i})">
         ${i}
       </button>
     `;
-  }
-  DOM.pageNumbers.innerHTML = pageBtnsHtml;
-}
-
-window.goToPage = function (pageNum) {
-  state.page = pageNum;
-  loadCertificates();
-};
-
-window.copyToClipboard = function (text) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast(t("copied"), "success");
-  });
-};
-
-window.updateStatus = updateStatus;
-window.deleteRecord = deleteRecord;
-
-/**
- * View Certificate Attestation Slip Modal (HARDCODED SCHOOL NAME)
- */
-window.viewAttestationSlip = function (id) {
-  const item = state.records.find((r) => r.id === id);
-  if (!item) return;
-
-  let statusClass = "waiting";
-  let statusLabel = t("statusWaiting");
-
-  if (item.status === "تمت كتابة الشهادة") {
-    statusClass = "written";
-    statusLabel = t("statusWritten");
-  } else if (item.status === "تم الرفع للتصديق") {
-    statusClass = "submitted";
-    statusLabel = t("statusSubmitted");
-  } else if (item.status === "تصديق شخصي" || item.status === "تصديق ع حسابه الشخصي") {
-    statusClass = "self-certified";
-    statusLabel = t("statusSelfCertified");
-  } else if (item.status === "تم التصديق") {
-    statusClass = "certified";
-    statusLabel = t("statusCertified");
-  } else {
-    statusClass = "waiting";
-    statusLabel = t("statusWaiting");
+    }
+    DOM.pageNumbers.innerHTML = pageBtnsHtml;
   }
 
-  const gradesArray = Array.isArray(item.grade_level)
-    ? item.grade_level
-    : [item.grade_level];
+  window.goToPage = function (pageNum) {
+    state.page = pageNum;
+    loadCertificates();
+  };
 
-  const gradeBadgesHtml = gradesArray
-    .map((g) => {
-      const meta = GRADE_MAP[g] || { en: g, ar: g, cls: "grade-tag-9" };
-      const label = state.lang === "ar" ? meta.ar : meta.en;
-      return `<span class="grade-tag ${meta.cls}">${escapeHtml(label)}</span>`;
-    })
-    .join(" ");
+  window.copyToClipboard = function (text) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(t("copied"), "success");
+    });
+  };
 
-  const secNumDisplay = item.security_number ? escapeHtml(item.security_number) : "-";
-  const barcodeDisplay = item.security_number ? `* ${escapeHtml(item.security_number)} *` : `* ${state.lang === "ar" ? "بدون رقم أمني" : "NO SECURITY NUMBER"} *`;
+  window.updateStatus = updateStatus;
+  window.deleteRecord = deleteRecord;
 
-  DOM.slipContent.innerHTML = `
+  /**
+   * View Certificate Attestation Slip Modal (HARDCODED SCHOOL NAME)
+   */
+  window.viewAttestationSlip = function (id) {
+    const item = state.records.find((r) => r.id === id);
+    if (!item) return;
+
+    let statusClass = "waiting";
+    let statusLabel = t("statusWaiting");
+
+    if (item.status === "تمت كتابة الشهادة") {
+      statusClass = "written";
+      statusLabel = t("statusWritten");
+    } else if (item.status === "تم الرفع للتصديق") {
+      statusClass = "submitted";
+      statusLabel = t("statusSubmitted");
+    } else if (
+      item.status === "تصديق شخصي" ||
+      item.status === "تصديق ع حسابه الشخصي"
+    ) {
+      statusClass = "self-certified";
+      statusLabel = t("statusSelfCertified");
+    } else if (item.status === "تم التصديق") {
+      statusClass = "certified";
+      statusLabel = t("statusCertified");
+    } else {
+      statusClass = "waiting";
+      statusLabel = t("statusWaiting");
+    }
+
+    const gradesArray = Array.isArray(item.grade_level)
+      ? item.grade_level
+      : [item.grade_level];
+
+    const gradeBadgesHtml = gradesArray
+      .map((g) => {
+        const meta = GRADE_MAP[g] || { en: g, ar: g, cls: "grade-tag-9" };
+        const label = state.lang === "ar" ? meta.ar : meta.en;
+        return `<span class="grade-tag ${meta.cls}">${escapeHtml(label)}</span>`;
+      })
+      .join(" ");
+
+    const secNumDisplay = item.security_number
+      ? escapeHtml(item.security_number)
+      : "-";
+    const barcodeDisplay = item.security_number
+      ? `* ${escapeHtml(item.security_number)} *`
+      : `* ${state.lang === "ar" ? "بدون رقم أمني" : "NO SECURITY NUMBER"} *`;
+
+    DOM.slipContent.innerHTML = `
     <div class="slip-card">
       <div class="slip-header">
         <div class="slip-emblem">
@@ -1863,240 +1952,245 @@ window.viewAttestationSlip = function (id) {
     </div>
   `;
 
-  DOM.slipModal.style.display = "flex";
-};
+    DOM.slipModal.style.display = "flex";
+  };
 
-// ==========================================
-// Modal Helpers & Field Validation UI
-// ==========================================
-function openRequestModal() {
-  cancelAllFormDebouncers();
-  lastRenderedWordCount = -1;
-  clearAllErrors();
-  state.editingId = null;
-  DOM.certificateForm.reset();
-  DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
-  DOM.academicYearInput.value = "";
-  formState.academic_year = "";
-  if (DOM.birthYearInput) {
-    DOM.birthYearInput.value = "";
-  }
-  formState.birth_year = "";
-  DOM.securityNumberInput.value = "";
-  formState.security_number = "";
-  if (DOM.sectionInput) {
-    DOM.sectionInput.value = "";
-    formState.section = "";
-  }
-  DOM.statusInput.value = "انتظار";
-  formState.status = "انتظار";
-
-  // Restore create titles & button text
-  const titleEl = document.getElementById("modalTitle");
-  if (titleEl) titleEl.textContent = t("modalTitle");
-  const submitTextEl = document.getElementById("btnSubmitText");
-  if (submitTextEl) submitTextEl.textContent = t("btnSaveRecord");
-
-  updateWordCounter();
-
-  // Reset selected grades in modal
-  state.selectedGrades.clear();
-  document.querySelectorAll(".grade-pill-item").forEach((pill) => {
-    pill.classList.remove("active");
-    const cb = pill.querySelector('input[type="checkbox"]');
-    if (cb) cb.checked = false;
-  });
-  updateGradesSelectedBadge();
-
-  DOM.requestModal.style.display = "flex";
-  DOM.studentNameInput.focus();
-}
-
-/**
- * Pre-fills and opens modal to edit an existing attestation request
- */
-async function openEditModal(id) {
-  cancelAllFormDebouncers();
-  lastRenderedWordCount = -1;
-  clearAllErrors();
-  state.editingId = id;
-
-  // Retrieve record from state or fetch from API
-  let record = state.records.find((r) => r.id === id);
-  if (!record) {
-    try {
-      const res = await fetch(`/api/certificates/${id}`);
-      const data = await res.json();
-      if (data.success) {
-        record = data.data;
-      }
-    } catch (err) {
-      console.error("Failed to fetch record details for edit:", err);
-    }
-  }
-
-  if (!record) {
-    showToast("Failed to load record details", "error");
-    return;
-  }
-
-  // Pre-fill inputs
-  DOM.studentNameInput.value = record.student_name || "";
-  formState.student_name = DOM.studentNameInput.value;
-  DOM.securityNumberInput.value = record.security_number || "";
-  formState.security_number = DOM.securityNumberInput.value;
-  if (DOM.sectionInput) {
-    DOM.sectionInput.value = record.section || "";
-    formState.section = DOM.sectionInput.value;
-  }
-  DOM.academicYearInput.value = record.academic_year || "";
-  formState.academic_year = DOM.academicYearInput.value;
-
-  // Pre-populate birth year if inferrable from academic year & grades (earliest grade baseline)
-  if (DOM.birthYearInput) {
-    const recYear = parseAcademicYearStart(record.academic_year);
-    const grades = extractGradeNumbers(record.grade_level);
-    if (recYear && grades.length > 0) {
-      const gMin = Math.min(...grades);
-      DOM.birthYearInput.value = String(recYear - gMin - 5);
-      formState.birth_year = DOM.birthYearInput.value;
-    } else {
+  // ==========================================
+  // Modal Helpers & Field Validation UI
+  // ==========================================
+  function openRequestModal() {
+    cancelAllFormDebouncers();
+    lastRenderedWordCount = -1;
+    clearAllErrors();
+    state.editingId = null;
+    DOM.certificateForm.reset();
+    DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
+    DOM.academicYearInput.value = "";
+    formState.academic_year = "";
+    if (DOM.birthYearInput) {
       DOM.birthYearInput.value = "";
-      formState.birth_year = "";
     }
+    formState.birth_year = "";
+    DOM.securityNumberInput.value = "";
+    formState.security_number = "";
+    if (DOM.sectionInput) {
+      DOM.sectionInput.value = "";
+      formState.section = "";
+    }
+    DOM.statusInput.value = "انتظار";
+    formState.status = "انتظار";
+
+    // Restore create titles & button text
+    const titleEl = document.getElementById("modalTitle");
+    if (titleEl) titleEl.textContent = t("modalTitle");
+    const submitTextEl = document.getElementById("btnSubmitText");
+    if (submitTextEl) submitTextEl.textContent = t("btnSaveRecord");
+
+    updateWordCounter();
+
+    // Reset selected grades in modal
+    state.selectedGrades.clear();
+    document.querySelectorAll(".grade-pill-item").forEach((pill) => {
+      pill.classList.remove("active");
+      const cb = pill.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = false;
+    });
+    updateGradesSelectedBadge();
+
+    DOM.requestModal.style.display = "flex";
+    DOM.studentNameInput.focus();
   }
-  // Pre-select status safely matching option values
-  const rawStatus = (record.status || "انتظار").trim();
-  let matchedOption = false;
-  if (DOM.statusInput && DOM.statusInput.options) {
-    for (let i = 0; i < DOM.statusInput.options.length; i++) {
-      if (DOM.statusInput.options[i].value.trim() === rawStatus) {
-        DOM.statusInput.selectedIndex = i;
-        matchedOption = true;
-        break;
+
+  /**
+   * Pre-fills and opens modal to edit an existing attestation request
+   */
+  async function openEditModal(id) {
+    cancelAllFormDebouncers();
+    lastRenderedWordCount = -1;
+    clearAllErrors();
+    state.editingId = id;
+
+    // Retrieve record from state or fetch from API
+    let record = state.records.find((r) => r.id === id);
+    if (!record) {
+      try {
+        const res = await fetch(`/api/certificates/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          record = data.data;
+        }
+      } catch (err) {
+        console.error("Failed to fetch record details for edit:", err);
       }
     }
-  }
-  if (!matchedOption && DOM.statusInput) {
-    DOM.statusInput.value = rawStatus;
-  }
-  formState.status = DOM.statusInput ? DOM.statusInput.value : rawStatus;
-  DOM.notesInput.value = record.notes || "";
-  formState.notes = DOM.notesInput.value;
 
-  // Set Edit title & button text
-  const titleEl = document.getElementById("modalTitle");
-  if (titleEl) titleEl.textContent = t("modalTitleEdit");
-  const submitTextEl = document.getElementById("btnSubmitText");
-  if (submitTextEl) submitTextEl.textContent = t("btnUpdateRecord");
-
-  updateWordCounter();
-
-  // Pre-fill grade pills (supports numeric like 9, 10, multi-grade like 9+10, 9 + 10, or canonical keys)
-  state.selectedGrades.clear();
-  const canonicalKeys = parseGradeKeys(record.grade_level);
-  canonicalKeys.forEach((g) => state.selectedGrades.add(g));
-
-  document.querySelectorAll(".grade-pill-item").forEach((pill) => {
-    const grade = pill.getAttribute("data-grade");
-    const cb = pill.querySelector('input[type="checkbox"]');
-    if (state.selectedGrades.has(grade)) {
-      pill.classList.add("active");
-      if (cb) cb.checked = true;
-    } else {
-      pill.classList.remove("active");
-      if (cb) cb.checked = false;
+    if (!record) {
+      showToast("Failed to load record details", "error");
+      return;
     }
-  });
-  updateGradesSelectedBadge();
 
-  DOM.requestModal.style.display = "flex";
-  DOM.studentNameInput.focus();
-}
-
-window.openEditModal = openEditModal;
-
-function closeRequestModal() {
-  cancelAllFormDebouncers();
-  DOM.requestModal.style.display = "none";
-  state.editingId = null;
-}
-
-function showFieldError(fieldName, message) {
-  const errEl = document.getElementById(`err_${fieldName}`);
-  if (errEl) {
-    errEl.textContent = message;
-  }
-  if (fieldName === "grade_level") {
-    if (DOM.gradeMultiSelectContainer) {
-      DOM.gradeMultiSelectContainer.classList.add("error-border");
+    // Pre-fill inputs
+    DOM.studentNameInput.value = record.student_name || "";
+    formState.student_name = DOM.studentNameInput.value;
+    DOM.securityNumberInput.value = record.security_number || "";
+    formState.security_number = DOM.securityNumberInput.value;
+    if (DOM.sectionInput) {
+      DOM.sectionInput.value = record.section || "";
+      formState.section = DOM.sectionInput.value;
     }
-    return;
+    DOM.academicYearInput.value = record.academic_year || "";
+    formState.academic_year = DOM.academicYearInput.value;
+
+    // Pre-populate birth year if inferrable from academic year & grades (earliest grade baseline)
+    if (DOM.birthYearInput) {
+      const recYear = parseAcademicYearStart(record.academic_year);
+      const grades = extractGradeNumbers(record.grade_level);
+      if (recYear && grades.length > 0) {
+        const gMin = Math.min(...grades);
+        DOM.birthYearInput.value = String(recYear - gMin - 5);
+        formState.birth_year = DOM.birthYearInput.value;
+      } else {
+        DOM.birthYearInput.value = "";
+        formState.birth_year = "";
+      }
+    }
+    // Pre-select status safely matching option values
+    const rawStatus = (record.status || "انتظار").trim();
+    let matchedOption = false;
+    if (DOM.statusInput && DOM.statusInput.options) {
+      for (let i = 0; i < DOM.statusInput.options.length; i++) {
+        if (DOM.statusInput.options[i].value.trim() === rawStatus) {
+          DOM.statusInput.selectedIndex = i;
+          matchedOption = true;
+          break;
+        }
+      }
+    }
+    if (!matchedOption && DOM.statusInput) {
+      DOM.statusInput.value = rawStatus;
+    }
+    formState.status = DOM.statusInput ? DOM.statusInput.value : rawStatus;
+    DOM.notesInput.value = record.notes || "";
+    formState.notes = DOM.notesInput.value;
+
+    // Set Edit title & button text
+    const titleEl = document.getElementById("modalTitle");
+    if (titleEl) titleEl.textContent = t("modalTitleEdit");
+    const submitTextEl = document.getElementById("btnSubmitText");
+    if (submitTextEl) submitTextEl.textContent = t("btnUpdateRecord");
+
+    updateWordCounter();
+
+    // Pre-fill grade pills (supports numeric like 9, 10, multi-grade like 9+10, 9 + 10, or canonical keys)
+    state.selectedGrades.clear();
+    const canonicalKeys = parseGradeKeys(record.grade_level);
+    canonicalKeys.forEach((g) => state.selectedGrades.add(g));
+
+    document.querySelectorAll(".grade-pill-item").forEach((pill) => {
+      const grade = pill.getAttribute("data-grade");
+      const cb = pill.querySelector('input[type="checkbox"]');
+      if (state.selectedGrades.has(grade)) {
+        pill.classList.add("active");
+        if (cb) cb.checked = true;
+      } else {
+        pill.classList.remove("active");
+        if (cb) cb.checked = false;
+      }
+    });
+    updateGradesSelectedBadge();
+
+    DOM.requestModal.style.display = "flex";
+    DOM.studentNameInput.focus();
   }
 
-  const inputEl = document.getElementById(
-    fieldName === "student_name"
-      ? "studentNameInput"
-      : fieldName === "security_number"
-      ? "securityNumberInput"
-      : fieldName === "academic_year"
-      ? "academicYearInput"
-      : `${fieldName}Input`
-  );
-  if (inputEl) {
-    inputEl.classList.add("error-border");
-  }
-}
+  window.openEditModal = openEditModal;
 
-function clearFieldError(fieldName) {
-  const errEl = document.getElementById(`err_${fieldName}`);
-  if (errEl) errEl.textContent = "";
-  if (fieldName === "grade_level") {
+  function closeRequestModal() {
+    cancelAllFormDebouncers();
+    DOM.requestModal.style.display = "none";
+    state.editingId = null;
+  }
+
+  function showFieldError(fieldName, message) {
+    const errEl = document.getElementById(`err_${fieldName}`);
+    if (errEl) {
+      errEl.textContent = message;
+    }
+    if (fieldName === "grade_level") {
+      if (DOM.gradeMultiSelectContainer) {
+        DOM.gradeMultiSelectContainer.classList.add("error-border");
+      }
+      return;
+    }
+
+    const inputEl = document.getElementById(
+      fieldName === "student_name"
+        ? "studentNameInput"
+        : fieldName === "security_number"
+          ? "securityNumberInput"
+          : fieldName === "academic_year"
+            ? "academicYearInput"
+            : `${fieldName}Input`,
+    );
+    if (inputEl) {
+      inputEl.classList.add("error-border");
+    }
+  }
+
+  function clearFieldError(fieldName) {
+    const errEl = document.getElementById(`err_${fieldName}`);
+    if (errEl) errEl.textContent = "";
+    if (fieldName === "grade_level") {
+      if (DOM.gradeMultiSelectContainer) {
+        DOM.gradeMultiSelectContainer.classList.remove("error-border");
+      }
+      return;
+    }
+
+    const inputEl = document.getElementById(
+      fieldName === "student_name"
+        ? "studentNameInput"
+        : fieldName === "security_number"
+          ? "securityNumberInput"
+          : fieldName === "academic_year"
+            ? "academicYearInput"
+            : `${fieldName}Input`,
+    );
+    if (inputEl) {
+      inputEl.classList.remove("error-border");
+    }
+  }
+
+  function clearAllErrors() {
+    document
+      .querySelectorAll(".field-error")
+      .forEach((el) => (el.textContent = ""));
+    document
+      .querySelectorAll(".error-border")
+      .forEach((el) => el.classList.remove("error-border"));
     if (DOM.gradeMultiSelectContainer) {
       DOM.gradeMultiSelectContainer.classList.remove("error-border");
     }
-    return;
   }
 
-  const inputEl = document.getElementById(
-    fieldName === "student_name"
-      ? "studentNameInput"
-      : fieldName === "security_number"
-      ? "securityNumberInput"
-      : fieldName === "academic_year"
-      ? "academicYearInput"
-      : `${fieldName}Input`
-  );
-  if (inputEl) {
-    inputEl.classList.remove("error-border");
+  function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    DOM.toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+      toast.remove();
+    }, 3500);
   }
-}
 
-function clearAllErrors() {
-  document.querySelectorAll(".field-error").forEach((el) => (el.textContent = ""));
-  document.querySelectorAll(".error-border").forEach((el) => el.classList.remove("error-border"));
-  if (DOM.gradeMultiSelectContainer) {
-    DOM.gradeMultiSelectContainer.classList.remove("error-border");
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
-}
-
-function showToast(message, type = "success") {
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  DOM.toastContainer.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3500);
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }
