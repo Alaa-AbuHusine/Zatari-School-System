@@ -271,6 +271,8 @@ export async function getCertificates({
   grade = "",
   page = 1,
   limit = 10,
+  sort_by = "request_date",
+  sort_order = "desc",
 } = {}) {
   const p = Math.max(1, parseInt(page, 10) || 1);
   const isAll = String(limit).trim().toUpperCase() === "ALL";
@@ -425,6 +427,14 @@ export async function getCertificates({
   const countRes = await pool.query(countQuery, params);
   const totalCount = countRes.rows[0]?.total || 0;
 
+  const validSortCols = {
+    request_date: "request_date",
+    id: "id",
+    student_name: "student_name",
+  };
+  const sortCol = validSortCols[sort_by] || "request_date";
+  const sortDir = String(sort_order).toUpperCase() === "ASC" ? "ASC" : "DESC";
+
   // Retrieve matching page records
   const dataParams = [...params, l, offset];
   const dataQuery = `
@@ -441,7 +451,7 @@ export async function getCertificates({
       created_at
     FROM certificate_requests
     ${whereSql}
-    ORDER BY id DESC
+    ORDER BY ${sortCol} ${sortDir}, id ${sortDir}
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
   `;
 

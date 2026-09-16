@@ -54,6 +54,8 @@ const i18n = {
     thGradeLevel: "Grade Levels",
     thAcademicYear: "Academic Year",
     thRequestDate: "Request Date",
+    sortDateDesc: "Newest first (Click to sort oldest first)",
+    sortDateAsc: "Oldest first (Click to sort newest first)",
     thStatus: "Status",
     thActions: "Actions",
     tableScrollHint: "⟷ Swipe horizontally to view full details",
@@ -195,6 +197,8 @@ const i18n = {
     thGradeLevel: "المراحل الدراسية",
     thAcademicYear: "العام الدراسي",
     thRequestDate: "تاريخ الطلب",
+    sortDateDesc: "الأحدث أولاً (انقر للترتيب: الأقدم أولاً)",
+    sortDateAsc: "الأقدم أولاً (انقر للترتيب: الأحدث أولاً)",
     thStatus: "الحالة",
     thActions: "الإجراءات",
     tableScrollHint: "⟷ مرر أفقياً لعرض باقي الأعمدة والتفاصيل",
@@ -317,6 +321,7 @@ const state = {
   debounceTimer: null,
   selectedGrades: new Set(),
   editingId: null,
+  dateSortOrder: "desc",
 };
 
 // Grade Definitions & Mapping
@@ -351,6 +356,8 @@ const DOM = {
 
   // Table & Pagination
   tableBody: document.getElementById("tableBody"),
+  thRequestDate: document.getElementById("thRequestDate"),
+  dateSortIcon: document.getElementById("dateSortIcon"),
   paginationInfo: document.getElementById("paginationInfo"),
   pageNumbers: document.getElementById("pageNumbers"),
   btnPrevPage: document.getElementById("btnPrevPage"),
@@ -500,6 +507,7 @@ function setLanguage(newLang) {
 
   updateWordCounter();
   updateGradesSelectedBadge();
+  updateSortIndicator();
 }
 
 function toggleLanguage() {
@@ -523,6 +531,17 @@ function updateMultiSelectLabels() {
 function bindEventListeners() {
   // Language Toggle
   DOM.btnLangToggle.addEventListener("click", toggleLanguage);
+
+  // Request Date Header Sort Toggle (Click & Keyboard Enter/Space)
+  if (DOM.thRequestDate) {
+    DOM.thRequestDate.addEventListener("click", toggleDateSort);
+    DOM.thRequestDate.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleDateSort();
+      }
+    });
+  }
 
   // Instant Search with 300ms Debounce
   DOM.searchInput.addEventListener("input", (e) => {
@@ -1148,6 +1167,65 @@ function syncYearFilterOptions(records) {
   } else {
     DOM.yearFilter.value = "ALL";
   }
+/**
+ * Sorts student records by request_date (descending newest-first, or ascending oldest-first)
+ * @param {Array} records
+ * @param {'desc'|'asc'} order
+ * @returns {Array} sorted records
+ */
+function sortRecordsByDate(records, order = state.dateSortOrder || "desc") {
+  if (!Array.isArray(records)) return [];
+  const isAsc = String(order).toLowerCase() === "asc";
+  return [...records].sort((a, b) => {
+    const timeA = a && a.request_date ? new Date(a.request_date).getTime() : 0;
+    const timeB = b && b.request_date ? new Date(b.request_date).getTime() : 0;
+    if (isNaN(timeA) || isNaN(timeB)) {
+      const strA = String((a && a.request_date) || "");
+      const strB = String((b && b.request_date) || "");
+      return isAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    }
+    if (timeA === timeB) {
+      const idA = (a && a.id) || 0;
+      const idB = (b && b.id) || 0;
+      return isAsc ? idA - idB : idB - idA;
+    }
+    return isAsc ? timeA - timeB : timeB - timeA;
+  });
+}
+
+/**
+ * Updates visual sort indicator icon and accessibility labels in table header
+ */
+function updateSortIndicator() {
+  const icon = DOM.dateSortIcon || document.getElementById("dateSortIcon");
+  const th = DOM.thRequestDate || document.getElementById("thRequestDate");
+  if (!icon) return;
+
+  const isDesc = state.dateSortOrder === "desc";
+  icon.textContent = isDesc ? "▼" : "▲";
+  icon.className = `sort-indicator ${isDesc ? "active-desc" : "active-asc"}`;
+  const titleKey = isDesc ? "sortDateDesc" : "sortDateAsc";
+  const titleText = t(titleKey);
+  icon.setAttribute("title", titleText);
+  if (th) {
+    th.setAttribute("title", titleText);
+    th.setAttribute("aria-sort", isDesc ? "descending" : "ascending");
+  }
+}
+
+/**
+ * Toggles request date sort direction between descending and ascending.
+ * Immediately re-orders displayed rows in-place without losing filter or pagination states,
+ * and fetches the re-ordered page from the server.
+ */
+function toggleDateSort() {
+  state.dateSortOrder = state.dateSortOrder === "desc" ? "asc" : "desc";
+  updateSortIndicator();
+  if (state.records && state.records.length > 0) {
+    state.records = sortRecordsByDate(state.records, state.dateSortOrder);
+    renderTable(state.records);
+  }
+  loadCertificates();
 }
 
 window.sortAcademicYears = sortAcademicYears;
@@ -1157,6 +1235,9 @@ window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
 window.extractGradeNumbers = extractGradeNumbers;
 window.calculateAcademicYearFromBirthYear = calculateAcademicYearFromBirthYear;
 window.triggerAutoAcademicYearCalc = triggerAutoAcademicYearCalc;
+window.sortRecordsByDate = sortRecordsByDate;
+window.toggleDateSort = toggleDateSort;
+window.updateSortIndicator = updateSortIndicator;
 
 // ==========================================
 // API Operations
@@ -1174,19 +1255,21 @@ async function loadCertificates() {
       status: state.status,
       academic_year: state.academic_year,
       grade: state.grade,
+      sort_by: "request_date",
+      sort_order: state.dateSortOrder || "desc",
     });
 
     const res = await fetch(`/api/certificates?${params.toString()}`);
     const data = await res.json();
 
     if (data.success) {
-      state.records = data.data;
+      state.records = sortRecordsByDate(data.data, state.dateSortOrder);
       state.page = data.pagination.page;
       state.totalPages = data.pagination.totalPages;
       state.totalRecords = data.pagination.total;
 
-      syncYearFilterOptions(data.data);
-      renderTable(data.data);
+      syncYearFilterOptions(state.records);
+      renderTable(state.records);
       renderPagination(data.pagination);
     } else {
       showToast("Failed to fetch records", "error");
@@ -1500,7 +1583,9 @@ function renderTable(records) {
     return;
   }
 
-  DOM.tableBody.innerHTML = records
+  const sortedRecords = sortRecordsByDate(records, state.dateSortOrder);
+
+  DOM.tableBody.innerHTML = sortedRecords
     .map((item) => {
       let statusClass = "waiting";
       let statusLabel = t("statusWaiting");

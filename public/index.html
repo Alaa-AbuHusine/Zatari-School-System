@@ -25,7 +25,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=1789595791550" />
+  <link rel="stylesheet" href="styles.css?v=1789596875010" />
 </head>
 <body>
   <!-- App Container -->
@@ -233,7 +233,12 @@
                 <th data-i18n="thStudentName">الاسم الثلاثي الكامل للطالب</th>
                 <th data-i18n="thGradeLevel">المراحل الدراسية</th>
                 <th data-i18n="thAcademicYear">العام الدراسي</th>
-                <th data-i18n="thRequestDate">تاريخ الطلب</th>
+                <th id="thRequestDate" class="th-sortable" role="button" tabindex="0" aria-sort="descending" title="ترتيب حسب تاريخ الطلب (الأحدث أولاً / الأقدم أولاً)">
+                  <div class="th-sort-wrapper">
+                    <span data-i18n="thRequestDate">تاريخ الطلب</span>
+                    <span id="dateSortIcon" class="sort-indicator active-desc" aria-hidden="true">▼</span>
+                  </div>
+                </th>
                 <th data-i18n="thStatus">الحالة</th>
                 <th class="th-actions" data-i18n="thActions">الإجراءات</th>
               </tr>
@@ -505,6 +510,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=1789595791550"></script>
+  <script src="app.js?v=1789596875010"></script>
 </body>
 </html>

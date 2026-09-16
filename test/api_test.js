@@ -36,6 +36,7 @@ import {
   formatGradeForExport,
   formatDateForExport,
   calculateAcademicYearFromBirthYear,
+  sortRecordsByDate,
 } from "../schemas/validation.js";
 
 console.log("==================================================");
@@ -757,6 +758,43 @@ async function runTests() {
     calculateAcademicYearFromBirthYear(1800, ["GRADE_10"]) === null,
     "Out-of-range birth year returns null"
   );
+
+  // 7.12 Request Date Sorting Functionality
+  console.log("\n[7.12] Testing Request Date Sorting Functionality (sortRecordsByDate)...");
+
+  const sampleRecords = [
+    { id: 101, student_name: "خالد سعيد", request_date: "2026-08-10" },
+    { id: 102, student_name: "محمد أحمد", request_date: "2026-09-15" },
+    { id: 103, student_name: "علي يوسف", request_date: "2026-07-01" },
+    { id: 104, student_name: "سامر حسن", request_date: "2026-09-15" }, // identical date to 102, higher id
+  ];
+
+  // Descending (newest first): 2026-09-15 (id 104, 102) -> 2026-08-10 -> 2026-07-01
+  const sortedDesc = sortRecordsByDate(sampleRecords, "desc");
+  assert(sortedDesc[0].id === 104 && sortedDesc[0].request_date === "2026-09-15", "Descending sort puts newest date at top (with tie-breaker on higher ID)");
+  assert(sortedDesc[1].id === 102 && sortedDesc[1].request_date === "2026-09-15", "Second record matches tied date with lower ID");
+  assert(sortedDesc[2].id === 101 && sortedDesc[2].request_date === "2026-08-10", "Third record is earlier date 2026-08-10");
+  assert(sortedDesc[3].id === 103 && sortedDesc[3].request_date === "2026-07-01", "Last record is oldest date 2026-07-01");
+
+  // Ascending (oldest first): 2026-07-01 -> 2026-08-10 -> 2026-09-15 (id 102, 104)
+  const sortedAsc = sortRecordsByDate(sampleRecords, "asc");
+  assert(sortedAsc[0].id === 103 && sortedAsc[0].request_date === "2026-07-01", "Ascending sort puts oldest date at top");
+  assert(sortedAsc[1].id === 101 && sortedAsc[1].request_date === "2026-08-10", "Second record is 2026-08-10");
+  assert(sortedAsc[2].id === 102 && sortedAsc[2].request_date === "2026-09-15", "Third record is newer date with lower ID in ascending");
+  assert(sortedAsc[3].id === 104 && sortedAsc[3].request_date === "2026-09-15", "Fourth record is newer date with higher ID in ascending");
+
+  // Default parameter is 'desc'
+  const defaultSorted = sortRecordsByDate(sampleRecords);
+  assert(defaultSorted[0].request_date === "2026-09-15", "sortRecordsByDate defaults to 'desc' (newest first)");
+
+  // Edge cases: null, empty, non-array
+  assert(Array.isArray(sortRecordsByDate(null)) && sortRecordsByDate(null).length === 0, "sortRecordsByDate(null) returns empty array");
+  assert(Array.isArray(sortRecordsByDate([])) && sortRecordsByDate([]).length === 0, "sortRecordsByDate([]) returns empty array");
+
+  // Preserves filter/pagination state: does not mutate original array
+  const originalCopy = [...sampleRecords];
+  sortRecordsByDate(sampleRecords, "asc");
+  assert(sampleRecords[0].id === originalCopy[0].id, "sortRecordsByDate does not mutate original array");
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");

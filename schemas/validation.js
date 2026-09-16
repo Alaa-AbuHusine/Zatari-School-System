@@ -443,6 +443,32 @@ export function calculateAcademicYearFromBirthYear(birthYear, gradeLevels) {
 }
 
 /**
+ * Sorts student records by request_date (descending newest-first, or ascending oldest-first)
+ * @param {Array} records
+ * @param {'desc'|'asc'} order
+ * @returns {Array} sorted records
+ */
+export function sortRecordsByDate(records, order = "desc") {
+  if (!Array.isArray(records)) return [];
+  const isAsc = String(order).toLowerCase() === "asc";
+  return [...records].sort((a, b) => {
+    const timeA = a && a.request_date ? new Date(a.request_date).getTime() : 0;
+    const timeB = b && b.request_date ? new Date(b.request_date).getTime() : 0;
+    if (isNaN(timeA) || isNaN(timeB)) {
+      const strA = String((a && a.request_date) || "");
+      const strB = String((b && b.request_date) || "");
+      return isAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    }
+    if (timeA === timeB) {
+      const idA = (a && a.id) || 0;
+      const idB = (b && b.id) || 0;
+      return isAsc ? idA - idB : idB - idA;
+    }
+    return isAsc ? timeA - timeB : timeB - timeA;
+  });
+}
+
+/**
  * Checks if a student record was active during a specific target academic year
  */
 export function isRecordActiveInAcademicYear(record, targetAcademicYear) {

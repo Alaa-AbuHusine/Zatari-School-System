@@ -73,7 +73,7 @@ app.use(
  */
 app.get("/api/certificates", async (req, res) => {
   try {
-    const { search, status, academic_year, grade, page, limit } = req.query;
+    const { search, status, academic_year, grade, page, limit, sort_by, sort_order } = req.query;
     const result = await getCertificates({
       search,
       status,
@@ -81,6 +81,8 @@ app.get("/api/certificates", async (req, res) => {
       grade,
       page,
       limit,
+      sort_by,
+      sort_order,
     });
     res.json({
       success: true,
