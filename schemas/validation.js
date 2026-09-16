@@ -673,3 +673,139 @@ export function formatDateForExport(dateStr) {
   return dateStr;
 }
 
+/**
+ * Extracts strictly numerical YYYY-MM month key from request date string or Date object
+ * @param {string|Date} dateStr
+ * @returns {string|null} e.g. '2026-09' or null
+ */
+export function extractMonthKey(dateStr) {
+  if (!dateStr) return null;
+
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) return null;
+    const y = dateStr.getFullYear();
+    const m = String(dateStr.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  const str = String(dateStr).trim().split("T")[0];
+
+  // Pattern: YYYY-MM or YYYY-MM-DD
+  const ymdMatch = str.match(/^(\d{4})-(\d{1,2})/);
+  if (ymdMatch) {
+    const y = ymdMatch[1];
+    const m = ymdMatch[2].padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  // Pattern: D/M/YYYY or DD/MM/YYYY
+  const dmyMatch = str.match(/^\d{1,2}\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const m = dmyMatch[1].padStart(2, "0");
+    const y = dmyMatch[2];
+    return `${y}-${m}`;
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  return null;
+}
+
+/**
+ * Sorts unique array of numerical months (YYYY-MM) chronologically
+ * @param {Array<string>} monthsArray
+ * @param {'desc'|'asc'} order Default is 'desc' (newest first)
+ * @returns {Array<string>} Sorted array of unique months
+ */
+export function sortMonthsChronologically(monthsArray, order = "desc") {
+  if (!Array.isArray(monthsArray)) return [];
+  const isAsc = String(order).toLowerCase() === "asc";
+
+  const unique = Array.from(
+    new Set(
+      monthsArray
+        .filter((m) => m !== null && m !== undefined)
+        .map((m) => String(m).trim())
+        .filter((m) => /^\d{4}-\d{2}$/.test(m))
+    )
+  );
+
+  return unique.sort((a, b) => {
+    return isAsc ? a.localeCompare(b) : b.localeCompare(a);
+  });
+}
+
+/**
+ * Groups records by numerical month (YYYY-MM) in chronological order
+ * @param {Array} records
+ * @param {'desc'|'asc'} order
+ * @returns {Array<{month: string, count: number, records: Array}>}
+ */
+export function groupRecordsByMonth(records, order = "desc") {
+  if (!Array.isArray(records) || records.length === 0) return [];
+  const sorted = sortRecordsByDate(records, order);
+  const groupsMap = new Map();
+
+  for (const rec of sorted) {
+    const monthKey = extractMonthKey(rec && rec.request_date) || "OTHER";
+    if (!groupsMap.has(monthKey)) {
+      groupsMap.set(monthKey, []);
+    }
+    groupsMap.get(monthKey).push(rec);
+  }
+
+  const result = [];
+  for (const [month, groupRecs] of groupsMap.entries()) {
+    result.push({
+      month,
+      count: groupRecs.length,
+      records: groupRecs,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Filters records strictly by Month and Year (YYYY-MM) or numerical month number (MM)
+ * @param {Array} records
+ * @param {string} monthFilter e.g. '2026-09', '09', 'ALL'
+ * @returns {Array} Filtered records
+ */
+export function filterRecordsByMonth(records, monthFilter) {
+  if (!Array.isArray(records)) return [];
+  if (
+    !monthFilter ||
+    monthFilter === "ALL" ||
+    monthFilter === "جميع الأشهر" ||
+    monthFilter === "All Months"
+  ) {
+    return records;
+  }
+
+  const filterTrimmed = String(monthFilter).trim();
+
+  // Exact YYYY-MM match (e.g. 2026-09)
+  if (/^\d{4}-\d{2}$/.test(filterTrimmed)) {
+    return records.filter((r) => extractMonthKey(r && r.request_date) === filterTrimmed);
+  }
+
+  // Single or double digit month (e.g. '09' or '9')
+  const numMonth = parseInt(filterTrimmed, 10);
+  if (!isNaN(numMonth) && numMonth >= 1 && numMonth <= 12) {
+    const padded = String(numMonth).padStart(2, "0");
+    return records.filter((r) => {
+      const k = extractMonthKey(r && r.request_date);
+      return k && k.endsWith(`-${padded}`);
+    });
+  }
+
+  return records;
+}
+
+

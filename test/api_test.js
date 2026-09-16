@@ -38,6 +38,10 @@ import {
   formatDateForExport,
   calculateAcademicYearFromBirthYear,
   sortRecordsByDate,
+  extractMonthKey,
+  sortMonthsChronologically,
+  groupRecordsByMonth,
+  filterRecordsByMonth,
 } from "../schemas/validation.js";
 
 console.log("==================================================");
@@ -884,6 +888,102 @@ async function runTests() {
 
   mockToggleTheme();
   assert(mockTheme === "dark" && mockStorage["student_gateway_theme"] === "dark", "Toggling theme from light switches back to dark");
+
+  // 7.14 Monthly Filter & Grouping for Request Dates
+  console.log("\n[7.14] Testing Monthly Filter & Grouping for Request Dates...");
+
+  // 1. extractMonthKey validation
+  assert(extractMonthKey("2026-09-08") === "2026-09", "extractMonthKey parses YYYY-MM-DD to YYYY-MM");
+  assert(extractMonthKey("2026-08-15") === "2026-08", "extractMonthKey parses August date to 2026-08");
+  assert(extractMonthKey("2026-01-01T10:00:00Z") === "2026-01", "extractMonthKey handles ISO timestamp");
+  assert(extractMonthKey("15/09/2026") === "2026-09", "extractMonthKey handles DD/MM/YYYY format");
+  assert(extractMonthKey(new Date("2026-09-12")) === "2026-09", "extractMonthKey handles Date object");
+  assert(extractMonthKey(null) === null, "extractMonthKey handles null safely");
+  assert(extractMonthKey("") === null, "extractMonthKey handles empty string safely");
+  assert(extractMonthKey("invalid-date") === null, "extractMonthKey handles invalid string safely");
+
+  // 2. sortMonthsChronologically validation
+  const rawMonths = ["2026-07", "2026-09", "2026-08", "2025-12", "2026-09"];
+  const sortedMonthsDesc = sortMonthsChronologically(rawMonths, "desc");
+  assert(
+    sortedMonthsDesc.length === 4 &&
+    sortedMonthsDesc[0] === "2026-09" &&
+    sortedMonthsDesc[1] === "2026-08" &&
+    sortedMonthsDesc[2] === "2026-07" &&
+    sortedMonthsDesc[3] === "2025-12",
+    "sortMonthsChronologically sorts descending (newest first) and deduplicates"
+  );
+
+  const sortedMonthsAsc = sortMonthsChronologically(rawMonths, "asc");
+  assert(
+    sortedMonthsAsc[0] === "2025-12" &&
+    sortedMonthsAsc[1] === "2026-07" &&
+    sortedMonthsAsc[2] === "2026-08" &&
+    sortedMonthsAsc[3] === "2026-09",
+    "sortMonthsChronologically sorts ascending (oldest first)"
+  );
+
+  // 3. groupRecordsByMonth validation
+  const testRecords = [
+    { id: 1, student_name: "أحمد", request_date: "2026-09-10" },
+    { id: 2, student_name: "محمد", request_date: "2026-08-20" },
+    { id: 3, student_name: "محمود", request_date: "2026-09-02" },
+    { id: 4, student_name: "علي", request_date: "2026-07-15" },
+  ];
+
+  const groupsDesc = groupRecordsByMonth(testRecords, "desc");
+  assert(groupsDesc.length === 3, "groupRecordsByMonth generates 3 month groups");
+  assert(groupsDesc[0].month === "2026-09" && groupsDesc[0].count === 2, "First group is 2026-09 with count 2 in desc order");
+  assert(groupsDesc[0].records[0].id === 1 && groupsDesc[0].records[1].id === 3, "Records within 2026-09 are sorted chronologically desc");
+  assert(groupsDesc[1].month === "2026-08" && groupsDesc[1].count === 1, "Second group is 2026-08 with count 1");
+  assert(groupsDesc[2].month === "2026-07" && groupsDesc[2].count === 1, "Third group is 2026-07 with count 1");
+
+  const groupsAsc = groupRecordsByMonth(testRecords, "asc");
+  assert(groupsAsc[0].month === "2026-07" && groupsAsc[0].count === 1, "First group is 2026-07 with count 1 in asc order");
+  assert(groupsAsc[1].month === "2026-08" && groupsAsc[1].count === 1, "Second group is 2026-08 with count 1 in asc order");
+  assert(groupsAsc[2].month === "2026-09" && groupsAsc[2].count === 2, "Third group is 2026-09 with count 2 in asc order");
+
+  // 4. filterRecordsByMonth validation
+  const filteredSep = filterRecordsByMonth(testRecords, "2026-09");
+  assert(filteredSep.length === 2 && filteredSep.every((r) => r.request_date.startsWith("2026-09")), "filterRecordsByMonth filters strictly by YYYY-MM");
+
+  const filteredAug = filterRecordsByMonth(testRecords, "08");
+  assert(filteredAug.length === 1 && filteredAug[0].request_date === "2026-08-20", "filterRecordsByMonth filters by numerical month '08'");
+
+  const filteredAll = filterRecordsByMonth(testRecords, "ALL");
+  assert(filteredAll.length === testRecords.length, "filterRecordsByMonth with 'ALL' returns all records");
+
+  // 5. Frontend UI Files Verification (index.html, styles.css, app.js)
+  const currentAppJsContent = fs.readFileSync("public/app.js", "utf8");
+  assert(
+    indexHtmlContent.includes('id="monthFilter"') && indexHtmlContent.includes('data-i18n="filterAllMonths"'),
+    "index.html defines #monthFilter dropdown with filterAllMonths default option"
+  );
+  assert(
+    stylesCssContent.includes(".month-group-row") &&
+    stylesCssContent.includes(".month-group-header") &&
+    stylesCssContent.includes(".month-group-label") &&
+    stylesCssContent.includes("html.dark .month-group-row"),
+    "styles.css defines month-group styles for both light and dark mode"
+  );
+  assert(
+    currentAppJsContent.includes("function extractMonthKey(") &&
+    currentAppJsContent.includes("function sortMonthsChronologically(") &&
+    currentAppJsContent.includes("function groupRecordsByMonth(") &&
+    currentAppJsContent.includes("function filterRecordsByMonth(") &&
+    currentAppJsContent.includes("function syncMonthFilterOptions("),
+    "app.js defines all monthly filter and grouping helper functions"
+  );
+  assert(
+    currentAppJsContent.includes("window.extractMonthKey = extractMonthKey;") &&
+    currentAppJsContent.includes("window.groupRecordsByMonth = groupRecordsByMonth;"),
+    "app.js exports month helper functions to window"
+  );
+  assert(
+    currentAppJsContent.includes('monthGroupRequests: "{count} طلبات"') &&
+    currentAppJsContent.includes('monthGroupRequests: "{count} requests"'),
+    "app.js provides localized monthGroupRequests translation strings in Arabic and English"
+  );
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");

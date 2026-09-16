@@ -41,6 +41,8 @@ const i18n = {
     filterAllStatus: "All Statuses",
     filterAllYears: "All Academic Years",
     filterAllGrades: "All Grade Levels",
+    filterAllMonths: "All Months",
+    monthGroupRequests: "{count} requests",
 
     // Grade Level Options
     grade9: "Grade 9",
@@ -194,6 +196,8 @@ const i18n = {
     filterAllStatus: "جميع الحالات",
     filterAllYears: "جميع الأعوام الدراسية",
     filterAllGrades: "جميع المراحل الدراسية",
+    filterAllMonths: "جميع الأشهر",
+    monthGroupRequests: "{count} طلبات",
 
     // Grade Level Options
     grade9: "الصف التاسع",
@@ -339,6 +343,7 @@ const state = {
   status: "ALL",
   academic_year: "ALL",
   grade: "ALL",
+  month: "ALL",
   page: 1,
   pageSize: savedPageSize,
   limit: savedPageSize === "ALL" ? 50000 : parseInt(savedPageSize, 10) || 10,
@@ -393,6 +398,7 @@ const DOM = {
   statusFilter: document.getElementById("statusFilter"),
   gradeFilter: document.getElementById("gradeFilter"),
   yearFilter: document.getElementById("yearFilter"),
+  monthFilter: document.getElementById("monthFilter"),
 
   // Table & Pagination
   tableBody: document.getElementById("tableBody"),
@@ -692,6 +698,15 @@ function bindEventListeners() {
     loadCertificates();
   });
 
+  // Month Filter (Numerical YYYY-MM)
+  if (DOM.monthFilter) {
+    DOM.monthFilter.addEventListener("change", (e) => {
+      state.month = e.target.value;
+      state.page = 1;
+      loadCertificates();
+    });
+  }
+
   // Pagination navigation
   DOM.btnPrevPage.addEventListener("click", () => {
     if (state.page > 1) {
@@ -842,16 +857,33 @@ function triggerDynamicCsvExport() {
       : "ALL";
 
   let exportUrl = "/api/certificates/export";
+  const queryParts = [];
+
   if (
     selectedStatus &&
     selectedStatus !== "ALL" &&
     selectedStatus !== "جميع الحالات"
   ) {
-    exportUrl += `?status=${encodeURIComponent(selectedStatus)}`;
+    queryParts.push(`status=${encodeURIComponent(selectedStatus)}`);
+  }
+
+  const selectedMonth =
+    state.month || (DOM.monthFilter && DOM.monthFilter.value);
+  if (
+    selectedMonth &&
+    selectedMonth !== "ALL" &&
+    selectedMonth !== "جميع الأشهر" &&
+    selectedMonth !== "All Months"
+  ) {
+    queryParts.push(`month=${encodeURIComponent(selectedMonth)}`);
+  }
+
+  if (queryParts.length > 0) {
+    exportUrl += `?${queryParts.join("&")}`;
   }
 
   console.log(
-    `[Export CSV] Selected Status: "${selectedStatus}" -> Download URL: ${exportUrl}`,
+    `[Export CSV] Status: "${selectedStatus}", Month: "${selectedMonth}" -> Download URL: ${exportUrl}`,
   );
   window.location.href = exportUrl;
   if (typeof showToast === "function") {
@@ -1368,8 +1400,204 @@ function toggleDateSort() {
   loadCertificates();
 }
 
+/**
+ * Extracts strictly numerical Year-Month key (YYYY-MM) from a date string or Date object.
+ * Returns null if invalid.
+ */
+function extractMonthKey(dateStr) {
+  if (!dateStr) return null;
+
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) return null;
+    const y = dateStr.getFullYear();
+    const m = String(dateStr.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  const str = String(dateStr).trim().split("T")[0];
+
+  // Pattern: YYYY-MM or YYYY-MM-DD
+  const ymdMatch = str.match(/^(\d{4})-(\d{1,2})/);
+  if (ymdMatch) {
+    const y = ymdMatch[1];
+    const m = ymdMatch[2].padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  // Pattern: D/M/YYYY or DD/MM/YYYY
+  const dmyMatch = str.match(/^\d{1,2}\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const m = dmyMatch[1].padStart(2, "0");
+    const y = dmyMatch[2];
+    return `${y}-${m}`;
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+
+  return null;
+}
+
+/**
+ * Sorts unique array of numerical months (YYYY-MM) chronologically
+ * @param {Array<string>} monthsArray
+ * @param {'desc'|'asc'} order Default is 'desc' (newest first)
+ * @returns {Array<string>} Sorted array of unique months
+ */
+function sortMonthsChronologically(monthsArray, order = "desc") {
+  if (!Array.isArray(monthsArray)) return [];
+  const isAsc = String(order).toLowerCase() === "asc";
+
+  const unique = Array.from(
+    new Set(
+      monthsArray
+        .filter((m) => m !== null && m !== undefined)
+        .map((m) => String(m).trim())
+        .filter((m) => /^\d{4}-\d{2}$/.test(m)),
+    ),
+  );
+
+  return unique.sort((a, b) => {
+    return isAsc ? a.localeCompare(b) : b.localeCompare(a);
+  });
+}
+
+/**
+ * Groups records by numerical month (YYYY-MM) in chronological order
+ * @param {Array} records
+ * @param {'desc'|'asc'} order
+ * @returns {Array<{month: string, count: number, records: Array}>}
+ */
+function groupRecordsByMonth(records, order = state.dateSortOrder || "desc") {
+  if (!Array.isArray(records) || records.length === 0) return [];
+  const sorted = sortRecordsByDate(records, order);
+  const groupsMap = new Map();
+
+  for (const rec of sorted) {
+    const monthKey = extractMonthKey(rec && rec.request_date) || "OTHER";
+    if (!groupsMap.has(monthKey)) {
+      groupsMap.set(monthKey, []);
+    }
+    groupsMap.get(monthKey).push(rec);
+  }
+
+  const result = [];
+  for (const [month, groupRecs] of groupsMap.entries()) {
+    result.push({
+      month,
+      count: groupRecs.length,
+      records: groupRecs,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Filters records strictly by Month and Year (YYYY-MM) or numerical month number (MM)
+ * @param {Array} records
+ * @param {string} monthFilter e.g. '2026-09', '09', 'ALL'
+ * @returns {Array} Filtered records
+ */
+function filterRecordsByMonth(records, monthFilter) {
+  if (!Array.isArray(records)) return [];
+  if (
+    !monthFilter ||
+    monthFilter === "ALL" ||
+    monthFilter === "جميع الأشهر" ||
+    monthFilter === "All Months"
+  ) {
+    return records;
+  }
+
+  const filterTrimmed = String(monthFilter).trim();
+
+  // Exact YYYY-MM match (e.g. 2026-09)
+  if (/^\d{4}-\d{2}$/.test(filterTrimmed)) {
+    return records.filter(
+      (r) => extractMonthKey(r && r.request_date) === filterTrimmed,
+    );
+  }
+
+  // Single or double digit month (e.g. '09' or '9')
+  const numMonth = parseInt(filterTrimmed, 10);
+  if (!isNaN(numMonth) && numMonth >= 1 && numMonth <= 12) {
+    const padded = String(numMonth).padStart(2, "0");
+    return records.filter((r) => {
+      const k = extractMonthKey(r && r.request_date);
+      return k && k.endsWith(`-${padded}`);
+    });
+  }
+
+  return records;
+}
+
+/**
+ * Synchronizes Month Filter dropdown options chronologically (newest to oldest)
+ * based on current records and pre-existing options.
+ */
+function syncMonthFilterOptions(records) {
+  if (!DOM.monthFilter) return;
+
+  const currentVal = DOM.monthFilter.value || state.month || "ALL";
+  const monthsSet = new Set();
+
+  // Collect from existing options (excluding "ALL")
+  Array.from(DOM.monthFilter.options || []).forEach((opt) => {
+    const val = opt.value?.trim();
+    if (val && val !== "ALL" && /^\d{4}-\d{2}$/.test(val)) {
+      monthsSet.add(val);
+    }
+  });
+
+  // Extract from records
+  if (Array.isArray(records)) {
+    for (const r of records) {
+      const key = extractMonthKey(r && r.request_date);
+      if (key) {
+        monthsSet.add(key);
+      }
+    }
+  }
+
+  const sortedMonths = sortMonthsChronologically(Array.from(monthsSet), "desc");
+
+  DOM.monthFilter.innerHTML = "";
+
+  // 1. Default "All Months"
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "ALL";
+  defaultOption.setAttribute("data-i18n", "filterAllMonths");
+  defaultOption.textContent = t("filterAllMonths");
+  DOM.monthFilter.appendChild(defaultOption);
+
+  // 2. Numerical YYYY-MM options
+  sortedMonths.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    DOM.monthFilter.appendChild(opt);
+  });
+
+  // 3. Restore selection
+  if (monthsSet.has(currentVal) || currentVal === "ALL") {
+    DOM.monthFilter.value = currentVal;
+  } else {
+    DOM.monthFilter.value = "ALL";
+  }
+}
+
 window.sortAcademicYears = sortAcademicYears;
 window.syncYearFilterOptions = syncYearFilterOptions;
+window.extractMonthKey = extractMonthKey;
+window.sortMonthsChronologically = sortMonthsChronologically;
+window.groupRecordsByMonth = groupRecordsByMonth;
+window.filterRecordsByMonth = filterRecordsByMonth;
+window.syncMonthFilterOptions = syncMonthFilterOptions;
 window.parseGradeKeys = parseGradeKeys;
 window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
 window.extractGradeNumbers = extractGradeNumbers;
@@ -1399,6 +1627,7 @@ async function loadCertificates() {
       status: state.status,
       academic_year: state.academic_year,
       grade: state.grade,
+      month: state.month || "ALL",
       sort_by: "request_date",
       sort_order: state.dateSortOrder || "desc",
     });
@@ -1413,6 +1642,7 @@ async function loadCertificates() {
       state.totalRecords = data.pagination.total;
 
       syncYearFilterOptions(state.records);
+      syncMonthFilterOptions(state.records);
       renderTable(state.records);
       renderPagination(data.pagination);
     } else {
@@ -1753,111 +1983,129 @@ function renderTable(records) {
   }
 
   const sortedRecords = sortRecordsByDate(records, state.dateSortOrder);
+  const monthGroups = groupRecordsByMonth(sortedRecords, state.dateSortOrder);
 
-  DOM.tableBody.innerHTML = sortedRecords
-    .map((item) => {
-      let statusClass = "waiting";
-      let statusLabel = t("statusWaiting");
-
-      if (item.status === "تمت كتابة الشهادة") {
-        statusClass = "written";
-        statusLabel = t("statusWritten");
-      } else if (item.status === "تم الرفع للتصديق") {
-        statusClass = "submitted";
-        statusLabel = t("statusSubmitted");
-      } else if (
-        item.status === "تصديق شخصي" ||
-        item.status === "تصديق ع حسابه الشخصي"
-      ) {
-        statusClass = "self-certified";
-        statusLabel = t("statusSelfCertified");
-      } else if (item.status === "تم التصديق") {
-        statusClass = "certified";
-        statusLabel = t("statusCertified");
-      } else {
-        statusClass = "waiting";
-        statusLabel = t("statusWaiting");
-      }
-
-      // Render clean, unified single grade badge (e.g., 9, 10, or 9 + 10)
-      const displayGrade = formatGradeLevelDisplay(item.grade_level);
-
-      const sectionHtml = item.section
-        ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
-        : "";
-
-      // Security number pill or placeholder
-      const secNumHtml = item.security_number
-        ? `<div class="sec-code-pill font-mono">
-           <span class="sec-code-text">${escapeHtml(item.security_number)}</span>
-           <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(item.security_number)}')" title="${t("tooltipCopy")}">
-             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-             </svg>
-           </button>
-         </div>`
-        : `<span class="text-muted font-mono" style="color: #94a3b8; font-size: 0.85rem;">-</span>`;
-
-      return `
-      <tr>
-        <td>${secNumHtml}</td>
-        <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
-        <td style="text-align: center;">
-          <div class="grade-cell-wrap">
-            <span class="grade-badge-unified">${escapeHtml(displayGrade)}</span>
-            ${sectionHtml}
+  DOM.tableBody.innerHTML = monthGroups
+    .map((group) => {
+      const headerRow = `
+      <tr class="month-group-row">
+        <td colspan="7" class="month-group-cell">
+          <div class="month-group-header">
+            <span class="month-group-icon">📅</span>
+            <span class="month-group-label font-mono">${escapeHtml(group.month)}</span>
+            <span class="month-group-count">${t("monthGroupRequests", { count: group.count })}</span>
           </div>
         </td>
-        <td class="font-mono" style="font-size: 0.78rem; text-align: center;">${escapeHtml(item.academic_year)}</td>
-        <td style="font-size: 0.78rem; color: #64748b; text-align: center;">${escapeHtml(item.request_date)}</td>
-        <td style="text-align: center;">
-          <span class="status-badge ${statusClass}">${statusLabel}</span>
-        </td>
-        <td>
-          <div class="action-btns">
-            <!-- View Attestation Slip Preview -->
-            <button class="action-icon-btn btn-view" onclick="viewAttestationSlip(${item.id})" title="${t("tooltipView")}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
+      </tr>`;
 
-            <!-- Edit Record -->
-            <button class="action-icon-btn btn-edit" onclick="openEditModal(${item.id})" title="${t("tooltipEdit")}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-              </svg>
-            </button>
+      const rowsHtml = group.records
+        .map((item) => {
+          let statusClass = "waiting";
+          let statusLabel = t("statusWaiting");
 
-            <!-- Quick Status Advance -->
-            ${
-              item.status !== "تمت كتابة الشهادة"
-                ? `<button class="action-icon-btn btn-write" onclick="updateStatus(${item.id}, 'تمت كتابة الشهادة')" title="${t("tooltipMarkWritten")}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 20h9"></path>
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                  </button>`
-                : `<button class="action-icon-btn btn-submit" onclick="updateStatus(${item.id}, 'تم الرفع للتصديق')" title="${t("tooltipMarkSubmitted")}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </button>`
-            }
+          if (item.status === "تمت كتابة الشهادة") {
+            statusClass = "written";
+            statusLabel = t("statusWritten");
+          } else if (item.status === "تم الرفع للتصديق") {
+            statusClass = "submitted";
+            statusLabel = t("statusSubmitted");
+          } else if (
+            item.status === "تصديق شخصي" ||
+            item.status === "تصديق ع حسابه الشخصي"
+          ) {
+            statusClass = "self-certified";
+            statusLabel = t("statusSelfCertified");
+          } else if (item.status === "تم التصديق") {
+            statusClass = "certified";
+            statusLabel = t("statusCertified");
+          } else {
+            statusClass = "waiting";
+            statusLabel = t("statusWaiting");
+          }
 
-            <!-- Delete Record with safe confirmation dialog -->
-            <button class="action-icon-btn btn-delete" onclick="deleteRecord(${item.id}, '${escapeHtml(item.student_name).replace(/'/g, "\\'")}')" title="${t("tooltipDelete")}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
+          // Render clean, unified single grade badge (e.g., 9, 10, or 9 + 10)
+          const displayGrade = formatGradeLevelDisplay(item.grade_level);
+
+          const sectionHtml = item.section
+            ? `<span class="section-tag" title="${t("lblSection")}">${escapeHtml(item.section)}</span>`
+            : "";
+
+          // Security number pill or placeholder
+          const secNumHtml = item.security_number
+            ? `<div class="sec-code-pill font-mono">
+               <span class="sec-code-text">${escapeHtml(item.security_number)}</span>
+               <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(item.security_number)}')" title="${t("tooltipCopy")}">
+                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                 </svg>
+               </button>
+             </div>`
+            : `<span class="text-muted font-mono" style="color: #94a3b8; font-size: 0.85rem;">-</span>`;
+
+          return `
+          <tr>
+            <td>${secNumHtml}</td>
+            <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
+            <td style="text-align: center;">
+              <div class="grade-cell-wrap">
+                <span class="grade-badge-unified">${escapeHtml(displayGrade)}</span>
+                ${sectionHtml}
+              </div>
+            </td>
+            <td class="font-mono" style="font-size: 0.78rem; text-align: center;">${escapeHtml(item.academic_year)}</td>
+            <td style="font-size: 0.78rem; color: #64748b; text-align: center;">${escapeHtml(item.request_date)}</td>
+            <td style="text-align: center;">
+              <span class="status-badge ${statusClass}">${statusLabel}</span>
+            </td>
+            <td>
+              <div class="action-btns">
+                <!-- View Attestation Slip Preview -->
+                <button class="action-icon-btn btn-view" onclick="viewAttestationSlip(${item.id})" title="${t("tooltipView")}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+
+                <!-- Edit Record -->
+                <button class="action-icon-btn btn-edit" onclick="openEditModal(${item.id})" title="${t("tooltipEdit")}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                  </svg>
+                </button>
+
+                <!-- Quick Status Advance -->
+                ${
+                  item.status !== "تمت كتابة الشهادة"
+                    ? `<button class="action-icon-btn btn-write" onclick="updateStatus(${item.id}, 'تمت كتابة الشهادة')" title="${t("tooltipMarkWritten")}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 20h9"></path>
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                      </button>`
+                    : `<button class="action-icon-btn btn-submit" onclick="updateStatus(${item.id}, 'تم الرفع للتصديق')" title="${t("tooltipMarkSubmitted")}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </button>`
+                }
+
+                <!-- Delete Record with safe confirmation dialog -->
+                <button class="action-icon-btn btn-delete" onclick="deleteRecord(${item.id}, '${escapeHtml(item.student_name).replace(/'/g, "\\'")}')" title="${t("tooltipDelete")}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+
+      return headerRow + rowsHtml;
     })
     .join("");
 }

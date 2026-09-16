@@ -73,12 +73,13 @@ app.use(
  */
 app.get("/api/certificates", async (req, res) => {
   try {
-    const { search, status, academic_year, grade, page, limit, sort_by, sort_order } = req.query;
+    const { search, status, academic_year, grade, month, page, limit, sort_by, sort_order } = req.query;
     const result = await getCertificates({
       search,
       status,
       academic_year,
       grade,
+      month,
       page,
       limit,
       sort_by,
@@ -147,10 +148,11 @@ app.get("/api/certificates/export", async (req, res) => {
       rawStatus !== "جميع الحالات"
     );
     const filterStatus = isExplicitStatus ? normalizeStatus(rawStatus) : null;
+    const month = req.query.month ? String(req.query.month).trim() : "";
     const format = (req.query.format || "xlsx").toLowerCase().trim();
 
     console.log(
-      `[Export] Request received with status: "${rawStatus}" (explicit: ${isExplicitStatus}) -> Normalized filter: "${filterStatus || "ALL"}", format: ${format}`
+      `[Export] Request received with status: "${rawStatus}" (explicit: ${isExplicitStatus}), month: "${month}" -> Normalized filter: "${filterStatus || "ALL"}", format: ${format}`
     );
 
     let result;
@@ -158,12 +160,14 @@ app.get("/api/certificates/export", async (req, res) => {
       // Explicitly filtered by user: fetch ONLY records for this status
       result = await getCertificates({
         status: filterStatus,
+        month,
         limit: 50000,
       });
     } else {
       // Not explicitly filtered: EXCLUDE draft statuses ('انتظار' and 'تمت كتابة الشهادة')
       result = await getCertificates({
         exclude_statuses: ["انتظار", "تمت كتابة الشهادة"],
+        month,
         limit: 50000,
       });
     }

@@ -828,6 +828,81 @@ html.dark .sun-icon,
   background-color: #f8fafc;
 }
 
+/* ================= Monthly Grouping Header Rows ================= */
+.month-group-row {
+  background-color: #f1f5f9;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.month-group-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.month-group-cell {
+  padding: 8px 14px !important;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.month-group-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.month-group-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.month-group-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #1e293b;
+}
+
+.month-group-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  background-color: #e2e8f0;
+  color: #475569;
+  border-radius: 10px;
+}
+
+/* Dark mode overrides for monthly grouping */
+html.dark .month-group-row,
+[data-theme="dark"] .month-group-row {
+  background-color: #162032 !important;
+  border-top-color: #334155;
+  border-bottom-color: #334155;
+}
+
+html.dark .month-group-header,
+[data-theme="dark"] .month-group-header {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .month-group-label,
+[data-theme="dark"] .month-group-label {
+  color: #f1f5f9;
+}
+
+html.dark .month-group-count,
+[data-theme="dark"] .month-group-count {
+  background-color: #334155;
+  color: #94a3b8;
+}
+
 .font-mono {
   font-family: var(--font-mono);
 }

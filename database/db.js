@@ -269,6 +269,7 @@ export async function getCertificates({
   exclude_statuses = [],
   academic_year = "",
   grade = "",
+  month = "",
   page = 1,
   limit = 10,
   sort_by = "request_date",
@@ -418,6 +419,28 @@ export async function getCertificates({
     whereClauses.push(`grade_level ILIKE $${paramIdx}`);
     params.push(`%"${grade.trim()}"%`);
     paramIdx++;
+  }
+
+  if (
+    month &&
+    month.trim() &&
+    month !== "ALL" &&
+    month !== "جميع الأشهر" &&
+    month !== "All Months"
+  ) {
+    const trimmedMonth = month.trim();
+    if (/^\d{4}-\d{2}$/.test(trimmedMonth)) {
+      whereClauses.push(`TO_CHAR(request_date, 'YYYY-MM') = $${paramIdx}`);
+      params.push(trimmedMonth);
+      paramIdx++;
+    } else {
+      const numMonth = parseInt(trimmedMonth, 10);
+      if (!isNaN(numMonth) && numMonth >= 1 && numMonth <= 12) {
+        whereClauses.push(`TO_CHAR(request_date, 'MM') = $${paramIdx}`);
+        params.push(String(numMonth).padStart(2, "0"));
+        paramIdx++;
+      }
+    }
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
