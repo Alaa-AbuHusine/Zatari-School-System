@@ -698,10 +698,16 @@ async function runTests() {
     "Born 2004 + Grade 10 correctly calculates '2019/2020'"
   );
 
-  // Born 2004 + multi-grade [9, 10] -> highest grade 10 -> 2019/2020
+  // Born 2004 + multi-grade [9, 10, 11] -> earliest grade 9 -> 2004 + 9 + 5 = 2018 -> 2018/2019
   assert(
-    calculateAcademicYearFromBirthYear(2004, ["GRADE_9", "GRADE_10"]) === "2019/2020",
-    "Born 2004 + multi-grade [9, 10] returns completion year of highest grade '2019/2020'"
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_9", "GRADE_10", "GRADE_11_SCI"]) === "2018/2019",
+    "Born 2004 + multi-grade [9, 10, 11] evaluates earliest grade 9 to calculate baseline '2018/2019'"
+  );
+
+  // Born 2004 + multi-grade [10, 11] -> earliest grade 10 -> 2004 + 10 + 5 = 2019 -> 2019/2020
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_10", "GRADE_11_SCI"]) === "2019/2020",
+    "Born 2004 + multi-grade [10, 11] evaluates earliest grade 10 to calculate baseline '2019/2020'"
   );
 
   // Born 2004 + Grade 11 Science -> 2004 + 11 + 5 = 2020 -> 2020/2021
@@ -728,10 +734,10 @@ async function runTests() {
     "String birth year '2010' + string grade calculates '2025/2026'"
   );
 
-  // String composite grade "9+10"
+  // String composite grade "9+10" -> earliest grade 9 -> 2010 + 9 + 5 = 2024 -> 2024/2025
   assert(
-    calculateAcademicYearFromBirthYear("2010", "9+10") === "2025/2026",
-    "Composite grade '9+10' with birth year 2010 calculates '2025/2026'"
+    calculateAcademicYearFromBirthYear("2010", "9+10") === "2024/2025",
+    "Composite grade '9+10' with birth year 2010 evaluates earliest grade 9 to calculate '2024/2025'"
   );
 
   // Invalid/empty inputs return null gracefully

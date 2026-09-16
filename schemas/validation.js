@@ -418,12 +418,14 @@ export function getRecordActiveYears(record) {
  * Calculates academic year (YYYY/YYYY) from birth year and selected grade levels.
  * Standard enrollment assumes a child enters Grade 1 at age 6.
  * Academic year start for grade g is: BirthYear + g + 5.
- * If multiple grades are selected, the completion year of the highest grade is returned.
+ * If multiple grades are selected (e.g., Grade 9 + 10 + 11), the earliest/oldest grade
+ * (e.g., Grade 9) is identified and evaluated as the baseline for the student's entry timeline.
  *
  * Examples:
- *   Born 2004 + Grade 9  -> 2004 + 9 + 5  = 2018 -> '2018/2019'
+ *   Born 2004 + Grade 9 -> 2004 + 9 + 5 = 2018 -> '2018/2019'
  *   Born 2004 + Grade 10 -> 2004 + 10 + 5 = 2019 -> '2019/2020'
- *   Born 2004 + [9, 10]  -> 2004 + 10 + 5 = 2019 -> '2019/2020'
+ *   Born 2004 + [9, 10, 11] -> earliest is Grade 9 -> 2004 + 9 + 5 = 2018 -> '2018/2019'
+ *   Born 2004 + [10, 11] -> earliest is Grade 10 -> 2004 + 10 + 5 = 2019 -> '2019/2020'
  */
 export function calculateAcademicYearFromBirthYear(birthYear, gradeLevels) {
   if (!birthYear) return null;
@@ -433,8 +435,9 @@ export function calculateAcademicYearFromBirthYear(birthYear, gradeLevels) {
   const numbers = extractGradeNumbers(gradeLevels);
   if (numbers.length === 0) return null;
 
-  const maxGrade = Math.max(...numbers);
-  const startYear = bYear + maxGrade + 5;
+  // Earliest/oldest grade evaluated as baseline for entry timeline
+  const earliestGrade = Math.min(...numbers);
+  const startYear = bYear + earliestGrade + 5;
   const endYear = startYear + 1;
   return `${startYear}/${endYear}`;
 }
