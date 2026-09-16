@@ -25,7 +25,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="styles.css?v=1789344211998" />
+  <link rel="stylesheet" href="styles.css?v=1789595456536" />
 </head>
 <body>
   <!-- App Container -->
@@ -357,7 +357,7 @@
               <div id="err_grade_level" class="field-error"></div>
             </div>
 
-            <!-- Security Number & Academic Year -->
+            <!-- Security Number & Section -->
             <div class="form-row">
               <div class="form-group">
                 <div class="label-row">
@@ -378,6 +378,40 @@
               </div>
 
               <div class="form-group">
+                <label for="sectionInput">
+                  <span data-i18n="lblSection">الشعبة (اختياري)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="sectionInput" 
+                  placeholder="مثال: أ أو ب أو ج" 
+                  data-i18n-placeholder="placeholderSection"
+                  maxlength="20"
+                />
+                <div class="field-hint" data-i18n="hintSection">الشعبة الصفية (مثال: أ، ب، ج)</div>
+              </div>
+            </div>
+
+            <!-- Birth Year & Academic Year -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="birthYearInput">
+                  <span data-i18n="lblBirthYear">سنة المواليد (اختياري)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="birthYearInput" 
+                  placeholder="مثال: 2004"
+                  data-i18n-placeholder="placeholderBirthYear"
+                  class="font-mono"
+                  maxlength="4"
+                  inputmode="numeric"
+                />
+                <div class="field-hint" data-i18n="hintBirthYear">حساب تلقائي للعام الدراسي بحسب المرحلة</div>
+                <div id="err_birth_year" class="field-error"></div>
+              </div>
+
+              <div class="form-group">
                 <label for="academicYearInput">
                   <span data-i18n="lblAcademicYear">العام الدراسي</span>
                   <span class="required">*</span>
@@ -395,22 +429,8 @@
               </div>
             </div>
 
-            <!-- Section & Request Date -->
+            <!-- Request Date & Status -->
             <div class="form-row">
-              <div class="form-group">
-                <label for="sectionInput">
-                  <span data-i18n="lblSection">الشعبة (اختياري)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="sectionInput" 
-                  placeholder="مثال: أ أو ب أو ج" 
-                  data-i18n-placeholder="placeholderSection"
-                  maxlength="20"
-                />
-                <div class="field-hint" data-i18n="hintSection">الشعبة الصفية (مثال: أ، ب، ج)</div>
-              </div>
-
               <div class="form-group">
                 <label for="requestDateInput">
                   <span data-i18n="lblRequestDate">تاريخ الطلب</span>
@@ -423,20 +443,19 @@
                 />
                 <div id="err_request_date" class="field-error"></div>
               </div>
-            </div>
 
-            <!-- Status -->
-            <div class="form-group">
-              <label for="statusInput">
-                <span data-i18n="lblStatus">حالة الطلب</span>
-              </label>
-              <select id="statusInput">
-                <option value="انتظار" selected data-i18n="optWaiting">انتظار</option>
-                <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
-                <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
-                <option value="تصديق شخصي" data-i18n="optSelfCertified">تصديق شخصي</option>
-                <option value="تم التصديق" data-i18n="optCertified">تم التصديق</option>
-              </select>
+              <div class="form-group">
+                <label for="statusInput">
+                  <span data-i18n="lblStatus">حالة الطلب</span>
+                </label>
+                <select id="statusInput">
+                  <option value="انتظار" selected data-i18n="optWaiting">انتظار</option>
+                  <option value="تمت كتابة الشهادة" data-i18n="optWritten">تمت كتابة الشهادة</option>
+                  <option value="تم الرفع للتصديق" data-i18n="optSubmitted">تم الرفع للتصديق</option>
+                  <option value="تصديق شخصي" data-i18n="optSelfCertified">تصديق شخصي</option>
+                  <option value="تم التصديق" data-i18n="optCertified">تم التصديق</option>
+                </select>
+              </div>
             </div>
 
             <!-- Notes -->
@@ -486,6 +505,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=1789344211998"></script>
+  <script src="app.js?v=1789595456536"></script>
 </body>
 </html>

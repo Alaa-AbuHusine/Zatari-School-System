@@ -35,6 +35,7 @@ import {
   isRecordActiveInAcademicYear,
   formatGradeForExport,
   formatDateForExport,
+  calculateAcademicYearFromBirthYear,
 } from "../schemas/validation.js";
 
 console.log("==================================================");
@@ -680,6 +681,75 @@ async function runTests() {
     certReqWithNumericGrade.sanitizedData.grade_level.length === 2 &&
     certReqWithNumericGrade.sanitizedData.grade_level.includes("GRADE_9"),
     "Composite grade correctly sanitized into canonical keys"
+  );
+
+  // 7.11 Smart Academic Year Calculation from Birth Year
+  console.log("\n[7.11] Testing Smart Academic Year Calculation from Birth Year...");
+
+  // Born 2004 + Grade 9 -> 2004 + 9 + 5 = 2018 -> 2018/2019
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_9"]) === "2018/2019",
+    "Born 2004 + Grade 9 correctly calculates '2018/2019'"
+  );
+
+  // Born 2004 + Grade 10 -> 2004 + 10 + 5 = 2019 -> 2019/2020
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_10"]) === "2019/2020",
+    "Born 2004 + Grade 10 correctly calculates '2019/2020'"
+  );
+
+  // Born 2004 + multi-grade [9, 10] -> highest grade 10 -> 2019/2020
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_9", "GRADE_10"]) === "2019/2020",
+    "Born 2004 + multi-grade [9, 10] returns completion year of highest grade '2019/2020'"
+  );
+
+  // Born 2004 + Grade 11 Science -> 2004 + 11 + 5 = 2020 -> 2020/2021
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_11_SCI"]) === "2020/2021",
+    "Born 2004 + Grade 11 Science correctly calculates '2020/2021'"
+  );
+
+  // Born 2004 + Grade 11 Arts -> 2004 + 11 + 5 = 2020 -> 2020/2021
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["GRADE_11_LIT"]) === "2020/2021",
+    "Born 2004 + Grade 11 Arts correctly calculates '2020/2021'"
+  );
+
+  // Born 2004 + Tawjihi (Grade 12) -> 2004 + 12 + 5 = 2021 -> 2021/2022
+  assert(
+    calculateAcademicYearFromBirthYear(2004, ["TAWJIHI"]) === "2021/2022",
+    "Born 2004 + Tawjihi correctly calculates '2021/2022'"
+  );
+
+  // String birth year input "2010" + Grade 10 -> 2010 + 10 + 5 = 2025 -> 2025/2026
+  assert(
+    calculateAcademicYearFromBirthYear("2010", "GRADE_10") === "2025/2026",
+    "String birth year '2010' + string grade calculates '2025/2026'"
+  );
+
+  // String composite grade "9+10"
+  assert(
+    calculateAcademicYearFromBirthYear("2010", "9+10") === "2025/2026",
+    "Composite grade '9+10' with birth year 2010 calculates '2025/2026'"
+  );
+
+  // Invalid/empty inputs return null gracefully
+  assert(
+    calculateAcademicYearFromBirthYear(null, ["GRADE_10"]) === null,
+    "Null birth year returns null"
+  );
+  assert(
+    calculateAcademicYearFromBirthYear("invalid", ["GRADE_10"]) === null,
+    "Invalid birth year returns null"
+  );
+  assert(
+    calculateAcademicYearFromBirthYear(2004, []) === null,
+    "Empty grade selection returns null"
+  );
+  assert(
+    calculateAcademicYearFromBirthYear(1800, ["GRADE_10"]) === null,
+    "Out-of-range birth year returns null"
   );
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)

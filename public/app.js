@@ -104,6 +104,9 @@ const i18n = {
     lblSection: "Section (Optional)",
     placeholderSection: "e.g. A, B, or C",
     hintSection: "Classroom section (e.g. A, B, C)",
+    lblBirthYear: "Birth Year (Optional)",
+    placeholderBirthYear: "e.g. 2004",
+    hintBirthYear: "Auto-calculates academic year based on grade level",
     lblSecNum: "Security Number (Optional)",
     placeholderSecNum: "e.g. SEC-2025-00107 (Optional)",
     btnGenerate: "Generate",
@@ -242,6 +245,9 @@ const i18n = {
     lblSection: "الشعبة (اختياري)",
     placeholderSection: "مثال: أ أو ب أو ج",
     hintSection: "الشعبة الصفية (مثال: أ، ب، ج)",
+    lblBirthYear: "سنة المواليد (اختياري)",
+    placeholderBirthYear: "مثال: 2004",
+    hintBirthYear: "حساب تلقائي للعام الدراسي بحسب المرحلة الدراسية",
     lblSecNum: "الرقم الأمني (اختياري)",
     placeholderSecNum: "مثال: SEC-2025-00107 (اختياري)",
     btnGenerate: "توليد تلقائي",
@@ -366,6 +372,7 @@ const DOM = {
   gradesSelectedBadge: document.getElementById("gradesSelectedBadge"),
   securityNumberInput: document.getElementById("securityNumberInput"),
   btnGenSecNum: document.getElementById("btnGenSecNum"),
+  birthYearInput: document.getElementById("birthYearInput"),
   academicYearInput: document.getElementById("academicYearInput"),
   sectionInput: document.getElementById("sectionInput"),
   requestDateInput: document.getElementById("requestDateInput"),
@@ -618,20 +625,34 @@ function bindEventListeners() {
   DOM.securityNumberInput.addEventListener("input", debouncedSecNumInput);
   DOM.securityNumberInput.addEventListener("blur", () => debouncedSecNumInput.flush());
 
-  // 3. Academic Year Input (Instant Auto-Masking YYYY/YYYY + 300ms debounced validation)
+  // 3. Birth Year Input (Numeric filtering + auto-calculates Academic Year)
+  if (DOM.birthYearInput) {
+    DOM.birthYearInput.addEventListener("input", (e) => {
+      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+      if (e.target.value !== val) {
+        e.target.value = val;
+      }
+      formState.birth_year = val;
+      if (val.length === 4) {
+        triggerAutoAcademicYearCalc();
+      }
+    });
+  }
+
+  // 4. Academic Year Input (Instant Auto-Masking YYYY/YYYY + 300ms debounced validation)
   DOM.academicYearInput.addEventListener("input", (e) => {
     handleAcademicYearMask(e);
     debouncedAcademicYearInput();
   });
   DOM.academicYearInput.addEventListener("blur", () => debouncedAcademicYearInput.flush());
 
-  // 4. Section Input (300ms debounce)
+  // 5. Section Input (300ms debounce)
   if (DOM.sectionInput) {
     DOM.sectionInput.addEventListener("input", debouncedSectionInput);
     DOM.sectionInput.addEventListener("blur", () => debouncedSectionInput.flush());
   }
 
-  // 5. Notes Textarea (300ms debounce)
+  // 6. Notes Textarea (300ms debounce)
   if (DOM.notesInput) {
     DOM.notesInput.addEventListener("input", debouncedNotesInput);
     DOM.notesInput.addEventListener("blur", () => debouncedNotesInput.flush());
@@ -660,6 +681,7 @@ function bindEventListeners() {
 
       updateGradesSelectedBadge();
       clearFieldError("grade_level");
+      triggerAutoAcademicYearCalc();
     });
   }
 
@@ -702,6 +724,7 @@ window.triggerDynamicCsvExport = triggerDynamicCsvExport;
 const formState = {
   student_name: "",
   security_number: "",
+  birth_year: "",
   academic_year: "",
   section: "",
   request_date: "",
@@ -953,6 +976,48 @@ function extractGradeNumbers(gradeInput) {
 }
 
 /**
+ * Calculates academic year (YYYY/YYYY) from birth year and selected grade levels.
+ * Standard enrollment assumes a child enters Grade 1 at age 6.
+ * Academic year start for grade g is: BirthYear + g + 5.
+ * If multiple grades are selected, the completion year of the highest grade is returned.
+ *
+ * Examples:
+ *   Born 2004 + Grade 9  -> 2004 + 9 + 5  = 2018 -> '2018/2019'
+ *   Born 2004 + Grade 10 -> 2004 + 10 + 5 = 2019 -> '2019/2020'
+ *   Born 2004 + [9, 10]  -> 2004 + 10 + 5 = 2019 -> '2019/2020'
+ */
+function calculateAcademicYearFromBirthYear(birthYear, gradeLevels) {
+  if (!birthYear) return null;
+  const bYear = typeof birthYear === "number" ? birthYear : parseInt(String(birthYear).trim(), 10);
+  if (isNaN(bYear) || bYear < 1950 || bYear > 2030) return null;
+
+  const numbers = extractGradeNumbers(gradeLevels);
+  if (numbers.length === 0) return null;
+
+  const maxGrade = Math.max(...numbers);
+  const startYear = bYear + maxGrade + 5;
+  const endYear = startYear + 1;
+  return `${startYear}/${endYear}`;
+}
+
+/**
+ * Triggers auto-calculation of academic year from birth year & selected grades.
+ * Populates academicYearInput and formState.academic_year if valid.
+ */
+function triggerAutoAcademicYearCalc() {
+  if (!DOM.birthYearInput || !DOM.academicYearInput) return;
+  const birthVal = DOM.birthYearInput.value.trim();
+  if (/^\d{4}$/.test(birthVal) && state.selectedGrades.size > 0) {
+    const calculated = calculateAcademicYearFromBirthYear(birthVal, Array.from(state.selectedGrades));
+    if (calculated) {
+      DOM.academicYearInput.value = calculated;
+      formState.academic_year = calculated;
+      clearFieldError("academic_year");
+    }
+  }
+}
+
+/**
  * Smart timeline progression matching for academic year
  */
 function isRecordActiveInAcademicYear(record, targetAcademicYear) {
@@ -1087,6 +1152,8 @@ window.syncYearFilterOptions = syncYearFilterOptions;
 window.parseGradeKeys = parseGradeKeys;
 window.isRecordActiveInAcademicYear = isRecordActiveInAcademicYear;
 window.extractGradeNumbers = extractGradeNumbers;
+window.calculateAcademicYearFromBirthYear = calculateAcademicYearFromBirthYear;
+window.triggerAutoAcademicYearCalc = triggerAutoAcademicYearCalc;
 
 // ==========================================
 // API Operations
@@ -1723,6 +1790,10 @@ function openRequestModal() {
   DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
   DOM.academicYearInput.value = "";
   formState.academic_year = "";
+  if (DOM.birthYearInput) {
+    DOM.birthYearInput.value = "";
+  }
+  formState.birth_year = "";
   DOM.securityNumberInput.value = "";
   formState.security_number = "";
   if (DOM.sectionInput) {
@@ -1792,6 +1863,20 @@ async function openEditModal(id) {
   }
   DOM.academicYearInput.value = record.academic_year || "";
   formState.academic_year = DOM.academicYearInput.value;
+
+  // Pre-populate birth year if inferrable from academic year & grades
+  if (DOM.birthYearInput) {
+    const recYear = parseAcademicYearStart(record.academic_year);
+    const grades = extractGradeNumbers(record.grade_level);
+    if (recYear && grades.length > 0) {
+      const gMax = Math.max(...grades);
+      DOM.birthYearInput.value = String(recYear - gMax - 5);
+      formState.birth_year = DOM.birthYearInput.value;
+    } else {
+      DOM.birthYearInput.value = "";
+      formState.birth_year = "";
+    }
+  }
   // Pre-select status safely matching option values
   const rawStatus = (record.status || "انتظار").trim();
   let matchedOption = false;
