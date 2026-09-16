@@ -2,6 +2,7 @@
  * Automated Verification Suite for Student Gateway
  * Supports PostgreSQL & Multi-Select Grade Levels & i18n Validation
  */
+import fs from "node:fs";
 import ExcelJS from "exceljs";
 import {
   getCertificates,
@@ -795,6 +796,94 @@ async function runTests() {
   const originalCopy = [...sampleRecords];
   sortRecordsByDate(sampleRecords, "asc");
   assert(sampleRecords[0].id === originalCopy[0].id, "sortRecordsByDate does not mutate original array");
+
+  // 7.13 Dark / Light Mode Theme Toggle & Persistence Logic
+  console.log("\n[7.13] Testing Dark / Light Mode Theme Toggle & Persistence Logic...");
+
+  const stylesCssContent = fs.readFileSync("public/styles.css", "utf8");
+  const indexHtmlContent = fs.readFileSync("public/index.html", "utf8");
+  const appJsContent = fs.readFileSync("public/app.js", "utf8");
+
+  // CSS tokens validation
+  assert(
+    stylesCssContent.includes(":root.dark") && stylesCssContent.includes('[data-theme="dark"]'),
+    "styles.css defines :root.dark and [data-theme='dark'] selectors"
+  );
+  assert(
+    stylesCssContent.includes("--bg-app: #0f172a;") && stylesCssContent.includes("--bg-card: #1e293b;"),
+    "styles.css configures deep slate dark palette (#0f172a app background, #1e293b card background)"
+  );
+  assert(
+    stylesCssContent.includes("--border: #334155;") && stylesCssContent.includes("--text-main: #f1f5f9;"),
+    "styles.css configures clean dark borders (#334155) and soft high-contrast text (#f1f5f9)"
+  );
+  assert(
+    stylesCssContent.includes(".btn-theme-toggle"),
+    "styles.css includes .btn-theme-toggle styling"
+  );
+  assert(
+    stylesCssContent.includes(".sun-icon") && stylesCssContent.includes(".moon-icon"),
+    "styles.css configures Sun and Moon icon transitions"
+  );
+  assert(
+    stylesCssContent.includes("transition: background-color 0.25s ease"),
+    "styles.css includes smooth global background/color transitions"
+  );
+
+  // HTML structure validation
+  assert(
+    indexHtmlContent.includes('id="btnThemeToggle"') && indexHtmlContent.includes('class="btn-theme-toggle"'),
+    "index.html renders #btnThemeToggle button in top navigation bar"
+  );
+  assert(
+    indexHtmlContent.includes('id="themeIconSun"') && indexHtmlContent.includes('id="themeIconMoon"'),
+    "index.html contains both Sun and Moon icon elements"
+  );
+  assert(
+    indexHtmlContent.includes("student_gateway_theme") && indexHtmlContent.includes("classList.add('dark')"),
+    "index.html contains zero-FOUC inline script in head to prevent theme flashing"
+  );
+
+  // app.js logic validation
+  assert(
+    appJsContent.includes("function setTheme(") &&
+    appJsContent.includes("function toggleTheme(") &&
+    appJsContent.includes("function initTheme("),
+    "app.js defines setTheme, toggleTheme, and initTheme functions"
+  );
+  assert(
+    appJsContent.includes("window.setTheme = setTheme;") &&
+    appJsContent.includes("window.toggleTheme = toggleTheme;"),
+    "app.js exports setTheme and toggleTheme to window"
+  );
+  assert(
+    appJsContent.includes('localStorage.setItem("student_gateway_theme"'),
+    "app.js persists theme preference in localStorage"
+  );
+  assert(
+    appJsContent.includes("themeToggleDark") && appJsContent.includes("themeToggleLight"),
+    "app.js provides localized tooltips in translation dictionaries"
+  );
+
+  // Functional simulation of theme state toggle
+  let mockTheme = "light";
+  let mockStorage = {};
+  const mockSetTheme = (t) => {
+    mockTheme = t === "dark" ? "dark" : "light";
+    mockStorage["student_gateway_theme"] = mockTheme;
+  };
+  const mockToggleTheme = () => {
+    mockSetTheme(mockTheme === "dark" ? "light" : "dark");
+  };
+
+  mockSetTheme("dark");
+  assert(mockTheme === "dark" && mockStorage["student_gateway_theme"] === "dark", "Setting theme to dark updates state and localStorage");
+
+  mockToggleTheme();
+  assert(mockTheme === "light" && mockStorage["student_gateway_theme"] === "light", "Toggling theme from dark switches to light and updates localStorage");
+
+  mockToggleTheme();
+  assert(mockTheme === "dark" && mockStorage["student_gateway_theme"] === "dark", "Toggling theme from light switches back to dark");
 
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");

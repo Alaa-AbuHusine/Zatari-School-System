@@ -15,6 +15,9 @@ const i18n = {
     appTag: "تصاديق الشهادات",
     appSubtitle: "Zaatari Camp Second Basic School for Boys",
     langToggleText: "عربي",
+    themeToggleTooltip: "Toggle Dark / Light Mode",
+    themeToggleDark: "Switch to Dark Mode",
+    themeToggleLight: "Switch to Light Mode",
     btnExportCsv: "Export CSV",
     exportCsv: "Export to Excel CSV",
     btnNewRequest: "New Attestation Request",
@@ -165,6 +168,9 @@ const i18n = {
     appTag: "تصاديق الشهادات",
     appSubtitle: "مدرسة مخيم الزعتري الأساسية الثانية للبنين",
     langToggleText: "English",
+    themeToggleTooltip: "تبديل الوضع الليلي / النهاري",
+    themeToggleDark: "تفعيل الوضع الداكن",
+    themeToggleLight: "تفعيل الوضع الفاتح",
     btnExportCsv: "تصدير كشف إكسل",
     exportCsv: "تصدير كشف إكسل (CSV)",
     btnNewRequest: "إدخال طلب تصديق جديد",
@@ -314,11 +320,21 @@ const savedPageSize =
   localStorage.getItem("student_gateway_page_size") ||
   "10";
 
+// Load persisted theme preference (defaults to system preference or "light")
+const savedTheme =
+  localStorage.getItem("student_gateway_theme") ||
+  (typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light");
+
 // ==========================================
 // Application State
 // ==========================================
 const state = {
   lang: localStorage.getItem("student_gateway_lang") || "ar",
+  theme: savedTheme,
   search: "",
   status: "ALL",
   academic_year: "ALL",
@@ -354,6 +370,11 @@ const GRADE_MAP = {
 
 // DOM Elements
 const DOM = {
+  // Theme Toggle
+  btnThemeToggle: document.getElementById("btnThemeToggle"),
+  themeIconSun: document.getElementById("themeIconSun"),
+  themeIconMoon: document.getElementById("themeIconMoon"),
+
   // Lang Toggle
   btnLangToggle: document.getElementById("btnLangToggle"),
   langToggleText: document.getElementById("langToggleText"),
@@ -464,6 +485,7 @@ function debounce(fn, delay = 300) {
 // Initialization
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
   setLanguage(state.lang);
   DOM.requestDateInput.value = new Date().toISOString().split("T")[0];
 
@@ -529,6 +551,7 @@ function setLanguage(newLang) {
   updateWordCounter();
   updateGradesSelectedBadge();
   updateSortIndicator();
+  updateThemeToggleButton();
 }
 
 function toggleLanguage() {
@@ -548,9 +571,72 @@ function updateMultiSelectLabels() {
 }
 
 // ==========================================
+// Theme (Dark / Light) Management
+// ==========================================
+function setTheme(newTheme) {
+  const theme = newTheme === "dark" ? "dark" : "light";
+  state.theme = theme;
+  try {
+    localStorage.setItem("student_gateway_theme", theme);
+  } catch (e) {}
+
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+    document.documentElement.setAttribute("data-theme", "dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+
+  updateThemeToggleButton();
+}
+
+function toggleTheme() {
+  const nextTheme = state.theme === "dark" ? "light" : "dark";
+  setTheme(nextTheme);
+}
+
+function updateThemeToggleButton() {
+  const btn = DOM.btnThemeToggle || document.getElementById("btnThemeToggle");
+  if (!btn) return;
+
+  const isDark = state.theme === "dark";
+  const tooltipText = isDark ? t("themeToggleLight") : t("themeToggleDark");
+  btn.setAttribute("title", tooltipText);
+  btn.setAttribute("aria-label", tooltipText);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("student_gateway_theme");
+  const systemPrefersDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initialTheme = saved || (systemPrefersDark ? "dark" : "light");
+  setTheme(initialTheme);
+
+  if (typeof window !== "undefined" && window.matchMedia) {
+    try {
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (e) => {
+          if (!localStorage.getItem("student_gateway_theme")) {
+            setTheme(e.matches ? "dark" : "light");
+          }
+        });
+    } catch (e) {}
+  }
+}
+
+// ==========================================
 // Event Listeners
 // ==========================================
 function bindEventListeners() {
+  // Theme Toggle
+  if (DOM.btnThemeToggle) {
+    DOM.btnThemeToggle.addEventListener("click", toggleTheme);
+  }
+
   // Language Toggle
   DOM.btnLangToggle.addEventListener("click", toggleLanguage);
 
@@ -1293,6 +1379,9 @@ window.triggerAutoAcademicYearCalc = triggerAutoAcademicYearCalc;
 window.sortRecordsByDate = sortRecordsByDate;
 window.toggleDateSort = toggleDateSort;
 window.updateSortIndicator = updateSortIndicator;
+window.setTheme = setTheme;
+window.toggleTheme = toggleTheme;
+window.initTheme = initTheme;
 
 // ==========================================
 // API Operations
