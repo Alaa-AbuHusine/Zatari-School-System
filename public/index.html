@@ -41,7 +41,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=1789600964964" />
+  <link rel="stylesheet" href="styles.css?v=1789671804087" />
 </head>
 <body>
   <!-- App Container -->
@@ -67,36 +67,39 @@
         </div>
 
         <div class="header-actions">
-          <!-- Theme Toggle Button (Sun / Moon) -->
-          <div class="theme-switch-wrapper">
-            <button id="btnThemeToggle" class="btn-theme-toggle" type="button" aria-label="Toggle theme" title="تبديل الوضع الليلي / النهاري" data-i18n-title="themeToggleTooltip">
-              <span class="theme-icon sun-icon" id="themeIconSun" aria-hidden="true">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="5"></circle>
-                  <line x1="12" y1="1" x2="12" y2="3"></line>
-                  <line x1="12" y1="21" x2="12" y2="23"></line>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                  <line x1="1" y1="12" x2="3" y2="12"></line>
-                  <line x1="21" y1="12" x2="23" y2="12"></line>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-              </span>
-              <span class="theme-icon moon-icon" id="themeIconMoon" aria-hidden="true">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-              </span>
-            </button>
-          </div>
+          <!-- Switches Wrapper (Theme + Language) -->
+          <div class="header-switches">
+            <!-- Theme Toggle Button (Sun / Moon) -->
+            <div class="theme-switch-wrapper">
+              <button id="btnThemeToggle" class="btn-theme-toggle" type="button" aria-label="Toggle theme" title="تبديل الوضع الليلي / النهاري" data-i18n-title="themeToggleTooltip">
+                <span class="theme-icon sun-icon" id="themeIconSun" aria-hidden="true">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                  </svg>
+                </span>
+                <span class="theme-icon moon-icon" id="themeIconMoon" aria-hidden="true">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                  </svg>
+                </span>
+              </button>
+            </div>
 
-          <!-- Language Toggle Button (EN / عربي) -->
-          <div class="lang-switch-wrapper">
-            <button id="btnLangToggle" class="btn-lang-toggle" type="button" aria-label="Toggle language">
-              <span class="lang-icon">🌐</span>
-              <span id="langToggleText">English</span>
-            </button>
+            <!-- Language Toggle Button (EN / عربي) -->
+            <div class="lang-switch-wrapper">
+              <button id="btnLangToggle" class="btn-lang-toggle" type="button" aria-label="Toggle language">
+                <span class="lang-icon">🌐</span>
+                <span id="langToggleText">English</span>
+              </button>
+            </div>
           </div>
 
           <button id="btnExportCsv" class="btn btn-secondary" title="Export to Excel CSV" data-i18n-title="exportCsv" onclick="window.triggerDynamicCsvExport && window.triggerDynamicCsvExport()">
@@ -554,6 +557,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=1789600964964"></script>
+  <script src="app.js?v=1789671804087"></script>
 </body>
 </html>

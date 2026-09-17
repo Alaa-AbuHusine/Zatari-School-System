@@ -235,6 +235,12 @@ html[dir="rtl"] .icon-next {
   gap: 10px;
 }
 
+.header-switches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Language Toggle Button */
 .btn-lang-toggle {
   display: inline-flex;
@@ -1881,37 +1887,336 @@ html[dir="rtl"] .toast-container {
   }
 
   .main-content {
-    padding: 12px 12px 30px;
+    padding: 10px 10px 30px !important;
+    gap: 14px !important;
   }
 
-  /* 1. Dashboard metrics cards stack vertically (flex-col) */
+  /* 1. Header & Actions Stacking */
+  .header-container {
+    padding: 12px 14px !important;
+    gap: 12px !important;
+  }
+
+  .brand-logo {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .brand-title-wrap h1 {
+    font-size: 1.05rem !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .header-switches {
+    display: flex !important;
+    width: 100% !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
+  }
+
+  .header-switches .theme-switch-wrapper,
+  .header-switches .lang-switch-wrapper {
+    flex: 1 1 50% !important;
+  }
+
+  .btn-theme-toggle,
+  .btn-lang-toggle {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+    font-size: 0.84rem !important;
+  }
+
+  /* 2. Metrics Cards & Secondary Strip */
   .metrics-grid {
     display: flex !important;
     flex-direction: column !important;
-    gap: 10px !important;
-    margin-bottom: 16px;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
   }
 
   .metric-card {
-    padding: 14px 16px;
-    border-radius: var(--radius-md);
+    padding: 12px 14px !important;
+    border-radius: var(--radius-md) !important;
   }
 
   .metric-value {
-    font-size: 1.6rem;
+    font-size: 1.5rem !important;
   }
 
-  /* 2. Modals and forms fit perfectly within mobile viewport */
+  .metrics-secondary-strip {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* 3. Controls, Search & Filter Stack in Single Column */
+  .registry-section {
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  .table-controls {
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .search-box input {
+    width: 100% !important;
+    min-height: 42px !important;
+    font-size: 16px !important;
+    padding: 10px 14px 10px 38px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  [dir="rtl"] .search-box input {
+    padding: 10px 38px 10px 14px !important;
+  }
+
+  .filter-group {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .select-filter {
+    width: 100% !important;
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
+    min-height: 42px !important;
+    font-size: 16px !important;
+    padding: 9px 12px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* 4. Table to Responsive Card-Based Layout Transformation */
+  .table-scroll-hint {
+    display: none !important;
+  }
+
+  .table-responsive {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+    min-height: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .data-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .data-table colgroup,
+  .data-table thead {
+    display: none !important;
+  }
+
+  .data-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    padding: 4px 10px 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Month Group Header Row on Mobile */
+  .data-table tr.month-group-row {
+    display: block !important;
+    margin: 8px 0 2px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .data-table tr.month-group-row td.month-group-cell {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+    width: 100% !important;
+  }
+
+  .data-table tr.month-group-row td.month-group-cell::before {
+    display: none !important;
+  }
+
+  .month-group-header {
+    border-radius: var(--radius-md) !important;
+    padding: 8px 12px !important;
+    justify-content: space-between !important;
+  }
+
+  /* Independent Student Card */
+  .data-table tr.student-card-row,
+  .data-table tr:not(.month-group-row) {
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 12px 14px !important;
+    box-shadow: var(--shadow-sm) !important;
+    gap: 2px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .data-table tr.student-card-row:hover,
+  .data-table tr:not(.month-group-row):hover {
+    box-shadow: var(--shadow-md) !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  html.dark .data-table tr.student-card-row:hover,
+  html.dark .data-table tr:not(.month-group-row):hover {
+    border-color: #475569 !important;
+  }
+
+  /* Card Data Rows */
+  .data-table tr.student-card-row td,
+  .data-table tr:not(.month-group-row) td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 7px 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed var(--border) !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: inherit !important;
+  }
+
+  /* Data Label on Mobile Card */
+  .data-table tr.student-card-row td::before,
+  .data-table tr:not(.month-group-row) td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 0.77rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    margin-inline-end: 12px;
+  }
+
+  /* Prominent Student Name in Card */
+  .data-table tr.student-card-row td.student-name-cell,
+  .data-table tr:not(.month-group-row) td.student-name-cell {
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+    padding-top: 2px !important;
+  }
+
+  /* Action Buttons Row at Bottom of Card */
+  .data-table tr.student-card-row td.card-actions-cell,
+  .data-table tr:not(.month-group-row) td.card-actions-cell {
+    border-bottom: none !important;
+    padding-top: 10px !important;
+    margin-top: 4px !important;
+    border-top: 1px solid var(--border) !important;
+    justify-content: space-between !important;
+  }
+
+  .action-btns {
+    display: flex !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+  }
+
+  .action-icon-btn {
+    padding: 8px 10px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  /* Empty State Cell on Mobile */
+  .data-table tr td.empty-state {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 36px 16px !important;
+    border: none !important;
+    width: 100% !important;
+  }
+
+  .data-table tr td.empty-state::before {
+    display: none !important;
+  }
+
+  /* 5. Pagination Footer Stacking */
+  .pagination-footer {
+    padding: 12px 14px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-align: center !important;
+  }
+
+  .pagination-controls-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .page-size-wrap {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .pagination-buttons {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* 6. Modals and Forms Ergonomics on Small Screens */
   .modal-overlay {
-    padding: 8px !important;
-    align-items: center;
+    padding: 6px !important;
+    align-items: center !important;
   }
 
   .modal-dialog {
-    max-width: 100% !important;
-    width: 100% !important;
-    max-height: calc(100dvh - 16px) !important;
-    border-radius: var(--radius-md) !important;
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    margin: 6px auto !important;
+    max-height: calc(100dvh - 12px) !important;
+    border-radius: 14px !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -1919,12 +2224,12 @@ html[dir="rtl"] .toast-container {
 
   .modal-header {
     padding: 12px 14px !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
   }
 
   .modal-title {
     font-size: 0.95rem !important;
-    line-height: 1.3;
+    line-height: 1.3 !important;
   }
 
   .modal-subtitle {
@@ -1934,39 +2239,39 @@ html[dir="rtl"] .toast-container {
   .modal-body {
     padding: 14px !important;
     flex: 1 1 auto !important;
-    max-height: calc(100dvh - 140px) !important;
+    max-height: calc(100dvh - 130px) !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .modal-footer {
     padding: 10px 14px !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
     position: sticky !important;
-    bottom: 0;
-    background: #fafbfc;
-    border-top: 1px solid var(--border);
-    z-index: 10;
-    display: flex;
-    gap: 8px;
+    bottom: 0 !important;
+    background-color: var(--bg-card) !important;
+    border-top: 1px solid var(--border) !important;
+    z-index: 10 !important;
+    display: flex !important;
+    gap: 8px !important;
   }
 
   .modal-footer .btn {
-    flex: 1;
-    min-height: 42px;
-    font-size: 0.82rem;
+    flex: 1 !important;
+    min-height: 44px !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
   }
 
-  /* Form Controls Touch Ergonomics */
   .grade-multiselect-grid {
     grid-template-columns: 1fr !important;
-    gap: 6px;
+    gap: 6px !important;
   }
 
   .grade-pill-item {
-    padding: 8px 12px;
-    font-size: 0.82rem;
-    min-height: 40px;
+    padding: 8px 12px !important;
+    font-size: 0.82rem !important;
+    min-height: 40px !important;
   }
 
   /* Prevent iOS Safari auto-zoom on input focus */
@@ -1975,51 +2280,12 @@ html[dir="rtl"] .toast-container {
   select,
   textarea {
     font-size: 16px !important;
+    min-height: 42px !important;
   }
 
-  /* Action Buttons Touch targets in table */
-  .action-btns {
-    gap: 4px;
-  }
-
-  .action-icon-btn {
-    padding: 6px 7px;
-    min-width: 32px;
-    min-height: 32px;
-  }
-
-  /* Slip dialog on phones */
   .slip-grid {
     grid-template-columns: 1fr !important;
-    gap: 10px;
-  }
-
-  /* Header adjustments on small phones */
-  .header-container {
-    padding: 10px 12px;
-  }
-
-  .brand-logo {
-    width: 34px;
-    height: 34px;
-  }
-
-  .brand-title-wrap h1 {
-    font-size: 1.05rem;
-  }
-
-  .header-actions .btn,
-  .btn-lang-toggle {
-    font-size: 0.75rem;
-    padding: 6px 10px;
-  }
-
-  /* Pagination footer wraps cleanly on small screens */
-  .pagination-footer {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
+    gap: 10px !important;
   }
 }
 

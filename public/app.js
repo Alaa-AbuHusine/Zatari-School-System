@@ -2044,21 +2044,21 @@ function renderTable(records) {
             : `<span class="text-muted font-mono" style="color: #94a3b8; font-size: 0.85rem;">-</span>`;
 
           return `
-          <tr>
-            <td>${secNumHtml}</td>
-            <td class="student-name-cell">${escapeHtml(item.student_name)}</td>
-            <td style="text-align: center;">
+          <tr class="student-card-row">
+            <td data-label="${escapeHtml(t("thSecNum"))}">${secNumHtml}</td>
+            <td data-label="${escapeHtml(t("thStudentName"))}" class="student-name-cell">${escapeHtml(item.student_name)}</td>
+            <td data-label="${escapeHtml(t("thGradeLevel"))}" style="text-align: center;">
               <div class="grade-cell-wrap">
                 <span class="grade-badge-unified">${escapeHtml(displayGrade)}</span>
                 ${sectionHtml}
               </div>
             </td>
-            <td class="font-mono" style="font-size: 0.78rem; text-align: center;">${escapeHtml(item.academic_year)}</td>
-            <td style="font-size: 0.78rem; color: #64748b; text-align: center;">${escapeHtml(item.request_date)}</td>
-            <td style="text-align: center;">
+            <td data-label="${escapeHtml(t("thAcademicYear"))}" class="font-mono" style="font-size: 0.78rem; text-align: center;">${escapeHtml(item.academic_year)}</td>
+            <td data-label="${escapeHtml(t("thRequestDate"))}" style="font-size: 0.78rem; color: #64748b; text-align: center;">${escapeHtml(item.request_date)}</td>
+            <td data-label="${escapeHtml(t("thStatus"))}" style="text-align: center;">
               <span class="status-badge ${statusClass}">${statusLabel}</span>
             </td>
-            <td>
+            <td data-label="${escapeHtml(t("thActions"))}" class="card-actions-cell">
               <div class="action-btns">
                 <!-- View Attestation Slip Preview -->
                 <button class="action-icon-btn btn-view" onclick="viewAttestationSlip(${item.id})" title="${t("tooltipView")}">

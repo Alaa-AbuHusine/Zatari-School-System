@@ -985,6 +985,87 @@ async function runTests() {
     "app.js provides localized monthGroupRequests translation strings in Arabic and English"
   );
 
+  // 7.15 Mobile Responsiveness & Card-Based Layout Verification
+  console.log("\n[7.15] Testing Mobile Responsiveness & Card-Based Layout...");
+
+  const responsiveStylesContent = fs.readFileSync("public/styles.css", "utf8");
+  const responsiveIndexHtmlContent = fs.readFileSync("public/index.html", "utf8");
+  const responsiveAppJsContent = fs.readFileSync("public/app.js", "utf8");
+
+  // 1. CSS Card-Based Layout Verification
+  assert(
+    responsiveStylesContent.includes("@media (max-width: 640px)"),
+    "styles.css defines @media (max-width: 640px) responsive breakpoint"
+  );
+  assert(
+    responsiveStylesContent.includes(".data-table thead") &&
+    responsiveStylesContent.includes("display: none !important;"),
+    "styles.css hides table header on mobile screens"
+  );
+  assert(
+    responsiveStylesContent.includes(".table-scroll-hint") &&
+    responsiveStylesContent.includes("display: none !important;"),
+    "styles.css removes forced horizontal scroll hint on mobile screens"
+  );
+  assert(
+    responsiveStylesContent.includes("tr.student-card-row") &&
+    responsiveStylesContent.includes("flex-direction: column !important;"),
+    "styles.css transforms table rows into independent vertical cards on mobile"
+  );
+  assert(
+    responsiveStylesContent.includes("content: attr(data-label);"),
+    "styles.css uses data-label attribute for card cell labeling"
+  );
+  assert(
+    responsiveStylesContent.includes("tr.month-group-row") &&
+    responsiveStylesContent.includes("td.month-group-cell::before"),
+    "styles.css configures month group rows as seamless divider cards on mobile without pseudo-labels"
+  );
+
+  // 2. CSS Header & Filter Single Column Stacking Verification
+  assert(
+    responsiveStylesContent.includes(".header-actions") &&
+    responsiveStylesContent.includes(".header-switches"),
+    "styles.css configures .header-switches and stacked .header-actions on mobile"
+  );
+  assert(
+    responsiveStylesContent.includes(".filter-group") &&
+    responsiveStylesContent.includes("flex-direction: column !important;"),
+    "styles.css stacks filter controls in a single column on mobile"
+  );
+  assert(
+    responsiveStylesContent.includes(".select-filter") &&
+    responsiveStylesContent.includes("min-width: 100% !important;"),
+    "styles.css ensures select filter dropdowns expand to 100% width on mobile without clipping"
+  );
+
+  // 3. HTML Structure Verification
+  assert(
+    responsiveIndexHtmlContent.includes('class="header-switches"'),
+    "index.html organizes theme and language toggles inside .header-switches"
+  );
+  assert(
+    responsiveIndexHtmlContent.includes('name="viewport"') &&
+    responsiveIndexHtmlContent.includes("width=device-width, initial-scale=1.0"),
+    "index.html includes correct responsive viewport meta tag"
+  );
+
+  // 4. App.js data-label Verification
+  assert(
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thSecNum"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thStudentName"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thGradeLevel"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thAcademicYear"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thRequestDate"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thStatus"))}"') &&
+    responsiveAppJsContent.includes('data-label="${escapeHtml(t("thActions"))}"'),
+    "app.js injects localized data-label attributes for all table cells in renderTable"
+  );
+  assert(
+    responsiveAppJsContent.includes('class="student-card-row"'),
+    "app.js tags table rows with student-card-row class for mobile card styling"
+  );
+
   // 5, 6, 8 Database Integration Tests (PostgreSQL)
   console.log("\n[Database] Connecting to PostgreSQL database...");
   let dbReachable = false;
